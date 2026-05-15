@@ -1,0 +1,1 @@
+# NaijaReview AI — Core Module

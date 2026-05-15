@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  naija-review-ai:
+    build: .
+    container_name: naija-review-ai
+    ports:
+      - "8000:8000"   # FastAPI API
+      - "8501:8501"   # Streamlit UI
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data    # Persist data between restarts
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1

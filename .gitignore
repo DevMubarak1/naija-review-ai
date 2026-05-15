@@ -1,0 +1,48 @@
+# Environment
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Data (too large for git)
+data/raw/
+data/chroma_db/
+data/processed/
+*.csv
+*.json.gz
+*.tar.gz
+*.parquet
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Docker
+*.log
+
+# Model artifacts
+models/
+*.pt
+*.bin
+*.safetensors
