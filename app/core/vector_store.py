@@ -35,16 +35,23 @@ class VectorStore:
         ids: list[str],
         texts: list[str],
         metadatas: list[dict] = None,
+        batch_size: int = 4000,
     ):
         """Add items to the vector store with auto-generated embeddings."""
-        embeddings = self.embedding_engine.embed_batch(texts)
-        self.collection.add(
-            ids=ids,
-            embeddings=embeddings,
-            documents=texts,
-            metadatas=metadatas,
-        )
-        logger.info(f"Added {len(ids)} items to vector store")
+        total = len(ids)
+        for start in range(0, total, batch_size):
+            end = min(start + batch_size, total)
+            batch_texts = texts[start:end]
+            batch_ids = ids[start:end]
+            batch_meta = metadatas[start:end] if metadatas else None
+            batch_embeddings = self.embedding_engine.embed_batch(batch_texts)
+            self.collection.add(
+                ids=batch_ids,
+                embeddings=batch_embeddings,
+                documents=batch_texts,
+                metadatas=batch_meta,
+            )
+            logger.info(f"Added batch {start}-{end} of {total} items")
 
     def search(
         self,
