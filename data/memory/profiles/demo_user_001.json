@@ -1,0 +1,44 @@
+{
+  "user_id": "demo_user_001",
+  "name": "User_demo_use",
+  "review_history": [
+    {
+      "rating": 2,
+      "review_text": "Disappointed. Product stopped working after 2 weeks. Not worth the money.",
+      "item_name": "USB Cable",
+      "category": "Electronics"
+    },
+    {
+      "rating": 4,
+      "review_text": "Pretty solid device. Battery life is great. Only issue is the charging port.",
+      "item_name": "Power Bank",
+      "category": "Electronics"
+    },
+    {
+      "rating": 5,
+      "review_text": "Amazing product! Best thing I bought this year. Delivery was fast and quality is top-notch.",
+      "item_name": "JBL Speaker",
+      "category": "Electronics"
+    },
+    {
+      "rating": 5,
+      "review_text": "This jollof rice is the best in all of Lagos! I keep coming back every weekend.",
+      "item_name": "Mama Cass",
+      "category": "Restaurants"
+    }
+  ],
+  "rating_distribution": {
+    "2": 1,
+    "4": 1,
+    "5": 2
+  },
+  "preferred_categories": [
+    "Electronics",
+    "Restaurants"
+  ],
+  "avg_review_length": 13.75,
+  "tone": "enthusiastic genuine reviewer",
+  "vocabulary_richness": 0.8545454545454545,
+  "is_nigerian": true,
+  "region": "Lagos"
+}

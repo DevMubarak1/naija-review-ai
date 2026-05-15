@@ -5,7 +5,6 @@ ChromaDB wrapper for storing and retrieving item/review embeddings.
 
 from typing import Optional
 import chromadb
-from chromadb.config import Settings as ChromaSettings
 from loguru import logger
 
 from app.core.config import settings
@@ -21,7 +20,6 @@ class VectorStore:
         logger.info(f"Initializing ChromaDB at: {settings.chroma_persist_dir}")
         self.client = chromadb.PersistentClient(
             path=settings.chroma_persist_dir,
-            settings=ChromaSettings(anonymized_telemetry=False),
         )
         self.collection = self.client.get_or_create_collection(
             name=collection_name,

@@ -1,44 +1,44 @@
 # === NaijaReview AI — Dependencies ===
+# Using flexible versions for Python 3.14 compatibility
 
 # LLM Providers
-groq==0.25.0
-openai==1.82.0
-langchain==0.3.25
-langchain-groq==0.3.2
-langchain-openai==0.3.18
-langchain-community==0.3.24
-langgraph==0.4.1
+groq
+openai
+langchain
+langchain-groq
+langchain-openai
+langchain-community
 
 # Embeddings & Vector Store
-sentence-transformers==4.1.0
-chromadb==1.0.7
+sentence-transformers
+chromadb
 
 # Web Framework
-fastapi==0.115.12
-uvicorn[standard]==0.34.2
-python-multipart==0.0.20
-streamlit==1.45.1
+fastapi
+uvicorn[standard]
+python-multipart
+streamlit
 
 # Data Processing
-pandas==2.2.3
-numpy==2.2.6
-datasets==3.6.0
-scikit-learn==1.6.1
+pandas
+numpy
+datasets
+scikit-learn
 
 # Rating Prediction
-xgboost==3.0.2
+xgboost
 
 # Evaluation Metrics
-rouge-score==0.1.2
-bert-score==0.3.13
-nltk==3.9.1
+rouge-score
+bert-score
+nltk
 
 # Utilities
-python-dotenv==1.1.0
-pydantic==2.11.3
-httpx==0.28.1
-tqdm==4.67.1
-loguru==0.7.3
+python-dotenv
+pydantic
+httpx
+tqdm
+loguru
 
 # Docker health check
-requests==2.32.3
+requests
