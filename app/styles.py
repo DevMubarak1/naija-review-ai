@@ -4,35 +4,38 @@
 LOGO = '<svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#1a7a4c"/><path d="M8 12L18 8l10 4v12l-10 4-10-4Z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><circle cx="18" cy="17" r="4" fill="#fff" opacity=".9"/><path d="M16 17l1.5 1.5L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 LOGO_SM = '<svg width="22" height="22" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#1a7a4c"/><circle cx="18" cy="17" r="4" fill="#fff" opacity=".9"/><path d="M16 17l1.5 1.5L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
-# ── Avatars ──
+# ── Chat avatars ──
 AV_USER = '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#e8f5ee"/><circle cx="14" cy="10" r="4.5" fill="#1a7a4c"/><path d="M5 24c0-5 4-9 9-9s9 4 9 9" fill="#1a7a4c"/></svg>'
 AV_AI = '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#1a7a4c"/><circle cx="14" cy="12" r="3.5" fill="#fff" opacity=".9"/><path d="M12 12l1.2 1.2L15 11" stroke="#1a7a4c" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="19" width="12" height="2" rx="1" fill="#fff" opacity=".4"/></svg>'
 STOP_IC = '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" rx="2" fill="#9ca3af"/></svg>'
 
-# ── Inline SVG icons (Heroicons-inspired, 18x18) ──
-IC_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
-IC_SEARCH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>'
-IC_MORE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>'
-IC_EDIT = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
-IC_STAR = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'
-IC_CHAT = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'
-IC_GEAR = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>'
-IC_CLOCK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'
-IC_TRASH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>'
-IC_INFO = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01" stroke-linecap="round"/></svg>'
-IC_SAVE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>'
-IC_SPARK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L9.5 8.5 3 10l5 4-1.5 7L12 17.5 17.5 21 16 14l5-4-6.5-1.5L12 2z"/></svg>'
+# ── SVG nav icons — all 16x16 for consistency ──
+def _ic(d, size=16):
+    return f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{d}</svg>'
+
+IC = {
+    "plus": _ic('<path d="M12 5v14M5 12h14"/>'),
+    "search": _ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>'),
+    "more": '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>',
+    "edit": _ic('<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>'),
+    "star": _ic('<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>'),
+    "chat": _ic('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>'),
+    "gear": _ic('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>'),
+    "clock": _ic('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>'),
+    "trash": _ic('<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>'),
+    "info": _ic('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>'),
+}
 
 
-def nav_item(svg_icon, label):
-    """Return HTML for a sidebar nav item with inline SVG."""
-    return f'''<div style="display:flex;align-items:center;gap:10px;padding:7px 12px;
-        border-radius:8px;cursor:pointer;color:#4b5563;font-size:0.85rem;font-weight:500;
-        transition:background .15s;"
-        onmouseover="this.style.background='#e8f5ee';this.style.color='#1a7a4c'"
-        onmouseout="this.style.background='transparent';this.style.color='#4b5563'">
-        <span style="flex-shrink:0;display:flex;align-items:center;">{svg_icon}</span>
-        <span>{label}</span>
+def nav_html(icon_key, label, active=False):
+    """Single HTML nav item with inline SVG + label, properly aligned."""
+    bg = "background:#e8f5ee;color:#1a7a4c;" if active else ""
+    ic_color = "color:#1a7a4c;" if active else "color:#6b7280;"
+    fw = "font-weight:600;" if active else "font-weight:500;"
+    return f'''<div style="display:flex;align-items:center;gap:10px;padding:6px 12px;
+        border-radius:8px;margin:1px 0;{bg}">
+        <span style="flex-shrink:0;display:flex;align-items:center;{ic_color}">{IC[icon_key]}</span>
+        <span style="font-size:0.84rem;{fw}color:{'#1a7a4c' if active else '#374151'};">{label}</span>
     </div>'''
 
 
@@ -49,10 +52,9 @@ html,body,[data-testid="stAppViewContainer"],[data-testid="stApp"],.main{
 }
 .block-container{padding:0!important;max-width:100%!important;}
 
-/* Hide ALL Streamlit chrome */
+/* Hide Streamlit chrome */
 header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],
-[data-testid="stDecoration"]{display:none!important;}
-[data-testid="collapsedControl"],
+[data-testid="stDecoration"],[data-testid="collapsedControl"],
 [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]{display:none!important;}
 
 /* ═══ SIDEBAR ═══ */
@@ -60,45 +62,40 @@ header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],
     background:var(--bg2)!important;border-right:1px solid var(--b)!important;
     width:260px!important;padding:0!important;
 }
-/* Kill ALL top spacing */
 [data-testid="stSidebar"]>div:first-child{padding-top:0!important;margin-top:0!important;}
 [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]{padding:0!important;margin:0!important;}
-[data-testid="stSidebar"] .stVerticalBlock{gap:2px!important;}
+[data-testid="stSidebar"] .stVerticalBlock{gap:0!important;}
 section[data-testid="stSidebar"]>div{
     height:100vh!important;overflow-y:auto!important;
     padding:0 8px 80px!important;
 }
 section[data-testid="stSidebar"]>div>div{padding-top:0!important;margin-top:0!important;}
 
-/* Sidebar icon+button columns — seamless rows */
-[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]{
-    gap:0!important;align-items:center!important;margin:0!important;padding:0!important;
+/* Sidebar buttons — INVISIBLE, just for click handling */
+[data-testid="stSidebar"] [data-testid="stButton"]{margin:0!important;padding:0!important;}
+[data-testid="stSidebar"] [data-testid="stButton"] button{
+    width:100%!important;background:transparent!important;
+    border:none!important;padding:0!important;margin:0!important;
+    min-height:0!important;height:0!important;overflow:hidden!important;
+    opacity:0!important;position:absolute!important;
 }
-[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stVerticalBlockBorderWrapper"]{
-    padding:0!important;margin:0!important;
+/* The HTML div above each button IS the clickable visual — but since the button is hidden,
+   we need the button to overlay the preceding nav_html div */
+
+/* Actually: make buttons visible but minimal — they sit right after the HTML label */
+[data-testid="stSidebar"] [data-testid="stButton"] button{
+    height:32px!important;opacity:0!important;cursor:pointer!important;
+    position:relative!important;margin-top:-32px!important;z-index:2!important;
 }
 
-/* Sidebar buttons — left-aligned, compact */
-[data-testid="stSidebar"] [data-testid="stButton"] button{
-    width:100%!important;text-align:left!important;background:transparent!important;
-    border:none!important;border-radius:8px!important;padding:6px 12px!important;
-    font-size:0.84rem!important;color:var(--tm)!important;font-weight:500!important;
-    display:flex!important;justify-content:flex-start!important;align-items:center!important;
-    transition:background .15s!important;min-height:0!important;line-height:1.3!important;
-    margin:0!important;
-}
-[data-testid="stSidebar"] [data-testid="stButton"] button p,
-[data-testid="stSidebar"] [data-testid="stButton"] button span{
-    text-align:left!important;
-}
-[data-testid="stSidebar"] [data-testid="stButton"] button:hover{
-    background:var(--gl)!important;color:var(--g)!important;
-}
-/* New chat — bordered pill */
+/* New chat button — keep visible with green border */
 [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]{
-    background:transparent!important;border:1px solid var(--b)!important;
-    color:var(--t)!important;font-weight:600!important;justify-content:flex-start!important;
-    border-radius:20px!important;margin:4px 0!important;padding:8px 14px!important;
+    opacity:1!important;height:auto!important;position:relative!important;
+    margin-top:0!important;background:transparent!important;
+    border:1px solid var(--b)!important;color:var(--t)!important;
+    font-weight:600!important;border-radius:20px!important;
+    padding:8px 14px!important;justify-content:center!important;
+    font-size:.84rem!important;
 }
 [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:hover{
     background:var(--gl)!important;border-color:var(--g)!important;color:var(--g)!important;
@@ -113,7 +110,7 @@ section[data-testid="stSidebar"]>div>div{padding-top:0!important;margin-top:0!im
 .user-nm{font-size:.84rem;font-weight:600;color:var(--t);line-height:1.2;}
 .user-pl{font-size:.68rem;color:var(--tl);}
 .nav-sec{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;
-    color:var(--tl);font-weight:600;padding:12px 12px 4px;margin-top:4px;}
+    color:var(--tl);font-weight:600;padding:14px 12px 4px;margin-top:4px;}
 
 /* ═══ INPUT ═══ */
 [data-testid="stTextInput"] input{
@@ -137,16 +134,22 @@ section[data-testid="stSidebar"]>div>div{padding-top:0!important;margin-top:0!im
     border-radius:22px!important;color:var(--tm)!important;font-size:.82rem!important;
     font-weight:500!important;padding:8px 16px!important;white-space:nowrap!important;
     justify-content:center!important;transition:all .15s!important;
+    opacity:1!important;height:auto!important;position:relative!important;margin-top:0!important;
 }
 .chip-row [data-testid="stButton"] button:hover{
     border-color:var(--g)!important;color:var(--g)!important;background:var(--gl)!important;
 }
-/* Global green */
-[data-testid="stButton"] button[kind="primary"]{
+
+/* Global green buttons (main content area) */
+.main [data-testid="stButton"] button[kind="primary"]{
     background:var(--g)!important;color:#fff!important;border:none!important;
     border-radius:22px!important;font-weight:600!important;padding:10px 24px!important;
+    opacity:1!important;height:auto!important;position:relative!important;margin-top:0!important;
 }
-[data-testid="stButton"] button[kind="primary"]:hover{background:var(--gh)!important;}
+.main [data-testid="stButton"] button[kind="primary"]:hover{background:var(--gh)!important;}
+.main [data-testid="stButton"] button{
+    opacity:1!important;height:auto!important;position:relative!important;margin-top:0!important;
+}
 [data-baseweb="slider"] div[role="slider"]{background:var(--g)!important;border-color:var(--g)!important;}
 .stSlider>div>div>div>div{background:var(--g)!important;}
 
@@ -170,8 +173,22 @@ section[data-testid="stSidebar"]>div>div{padding-top:0!important;margin-top:0!im
     color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;}
 .sec-hd{display:flex;align-items:center;gap:10px;margin:1.5rem 0 1rem;color:var(--t);}
 
-/* Chat */
+/* ═══ CHAT — hide Streamlit default avatar, use only custom SVG ═══ */
 [data-testid="stChatMessage"]{max-width:700px;margin:0 auto;background:transparent!important;border:none!important;}
+[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarCustom"],
+[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarAssistant"],
+[data-testid="stChatMessage"] img[data-testid],
+[data-testid="stChatMessage"]>div:first-child>div:first-child{
+    display:none!important;
+}
+
+/* Mode indicator pill */
+.mode-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;
+    border-radius:16px;background:var(--gl);color:var(--g);font-size:.75rem;
+    font-weight:600;margin-bottom:8px;}
+.mode-pill svg{color:var(--g);}
+
 [data-testid="stRadio"]{display:none!important;}
 hr{display:none!important;}
 
