@@ -1,7 +1,7 @@
 """NaijaReview AI — Styles (ChatGPT-inspired, white/green theme)"""
 
 # SVG Logo for NaijaReview AI
-LOGO_SVG = '''<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+LOGO_SVG = '''<svg width="32" height="32" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="36" height="36" rx="10" fill="#1a7a4c"/>
   <path d="M8 12 L18 8 L28 12 L28 24 L18 28 L8 24Z" fill="none" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
   <path d="M18 8 L18 28" stroke="white" stroke-width="1.2" opacity="0.4"/>
@@ -12,29 +12,29 @@ LOGO_SVG = '''<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns=
   <circle cx="24" cy="22" r="1.5" fill="white" opacity="0.5"/>
 </svg>'''
 
-LOGO_SVG_SMALL = '''<svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+LOGO_SVG_SMALL = '''<svg width="26" height="26" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="36" height="36" rx="10" fill="#1a7a4c"/>
   <path d="M8 12 L18 8 L28 12 L28 24 L18 28 L8 24Z" fill="none" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
   <circle cx="18" cy="17" r="4" fill="white" opacity="0.9"/>
   <path d="M16 17 L17.5 18.5 L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>'''
 
-# SVG Icons (inline, no external deps)
+# SVG Icons — clean, properly sized
 ICON = {
-    "plus": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-    "search": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-    "chat": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v8H5l-3 3V3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
-    "pencil": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
-    "star": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.2l-3 2.9.7 4.1L8 11.4l-3.7 1.8.7-4.1-3-2.9 4.2-.6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
-    "target": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>',
-    "globe": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M2 8h12M8 2c2 2 2.5 4 2.5 6s-.5 4-2.5 6M8 2c-2 2-2.5 4-2.5 6s.5 4 2.5 6" stroke="currentColor" stroke-width="1.2"/></svg>',
-    "folder": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h4l2 2h6v7H2V4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
-    "settings": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
-    "dots": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="3" cy="8" r="1.2" fill="currentColor"/><circle cx="8" cy="8" r="1.2" fill="currentColor"/><circle cx="13" cy="8" r="1.2" fill="currentColor"/></svg>',
-    "history": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    "send": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9l12-6-6 12-1-5-5-1z" fill="currentColor"/></svg>',
-    "mic": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="6" y="2" width="4" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 8a4 4 0 008 0M8 12v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
-    "user": '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    "new_chat": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v12M3 9h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    "search": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.6"/><path d="M12 12l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    "more": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="4" cy="9" r="1.3" fill="currentColor"/><circle cx="9" cy="9" r="1.3" fill="currentColor"/><circle cx="14" cy="9" r="1.3" fill="currentColor"/></svg>',
+    "pencil": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M13 2.5l2.5 2.5L6 14.5H3.5V12L13 2.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 4.5l2.5 2.5" stroke="currentColor" stroke-width="1.5"/></svg>',
+    "target": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="1" fill="currentColor"/></svg>',
+    "chat": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4h12a1 1 0 011 1v7a1 1 0 01-1 1H7l-4 3V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+    "settings": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.7 3.7l1.4 1.4M12.9 12.9l1.4 1.4M3.7 14.3l1.4-1.4M12.9 5.1l1.4-1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    "history": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 5v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    "user": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    "collapse": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 2v14" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 7.5L13 9l-2.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    # Mode chip icons (bigger, more detailed)
+    "chip_review": '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="2" width="12" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M7 6h6M7 9h6M7 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="14" cy="14" r="3.5" fill="white" stroke="currentColor" stroke-width="1.3"/><path d="M13 14l1 1 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    "chip_recommend": '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2l2.2 4.4 4.8.7-3.5 3.4.8 4.8L10 13l-4.3 2.3.8-4.8L3 7.1l4.8-.7L10 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
+    "chip_chat": '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 4h14a1 1 0 011 1v8a1 1 0 01-1 1H8l-5 4V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="7" cy="9" r="1" fill="currentColor"/><circle cx="10" cy="9" r="1" fill="currentColor"/><circle cx="13" cy="9" r="1" fill="currentColor"/></svg>',
 }
 
 CUSTOM_CSS = """
@@ -54,7 +54,7 @@ CUSTOM_CSS = """
     --border: #e5e7eb;
     --border-light: #f3f4f6;
     --input-bg: #f3f4f6;
-    --radius: 24px;
+    --radius: 32px;
     --radius-sm: 12px;
 }
 
@@ -67,216 +67,325 @@ h1,h2,h3,h4,h5,h6,p,span,label,div,li,a,button {
     font-family: 'Inter', -apple-system, sans-serif !important;
 }
 
-/* Hide Streamlit chrome */
+/* ═══ Hide ALL Streamlit chrome ═══ */
 header[data-testid="stHeader"] { display: none !important; }
 #MainMenu { display: none !important; }
 footer { display: none !important; }
 [data-testid="stToolbar"] { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
 
-/* ── Sidebar ── */
+/* KILL the "keyboard_double_arrow_left" collapse button text */
+[data-testid="stSidebar"] button[kind="header"],
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+[data-testid="collapsedControl"],
+button[data-testid="stSidebarCollapse"],
+[data-testid="stSidebarContent"] > div:first-child > button,
+.stSidebar button[kind="headerNoPadding"],
+section[data-testid="stSidebar"] > div > div > div > button {
+    display: none !important;
+}
+/* Also hide any Material icon text that leaks */
+[data-testid="stSidebar"] span.material-symbols-outlined,
+[data-testid="stSidebar"] .material-icons {
+    display: none !important;
+}
+
+/* ═══ Sidebar ═══ */
 [data-testid="stSidebar"] {
     background: var(--bg-sidebar) !important;
     border-right: 1px solid var(--border) !important;
     width: 260px !important;
     padding: 0 !important;
 }
-[data-testid="stSidebar"] .block-container { padding: 12px !important; }
+[data-testid="stSidebar"] .block-container { padding: 0 !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 0 !important; }
-
-.sidebar-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 4px 16px;
-}
-.sidebar-logo {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 0.92rem; font-weight: 600; color: var(--text);
+[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 0 !important;
 }
 
-/* Nav buttons */
-.nav-btn {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 10px; border-radius: 8px;
-    font-size: 0.85rem; color: var(--text-mid);
-    cursor: pointer; transition: background 0.15s;
-    text-decoration: none; margin-bottom: 1px;
+/* Sidebar inner scroll container */
+section[data-testid="stSidebar"] > div {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    overflow: hidden !important;
 }
-.nav-btn:hover { background: var(--green-light); color: var(--green); }
-.nav-btn-active {
-    background: var(--green) !important;
-    color: white !important;
-}
-.nav-btn svg { flex-shrink: 0; }
-
-.nav-section {
-    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--text-light); font-weight: 600;
-    padding: 16px 10px 6px; margin-top: 4px;
+section[data-testid="stSidebar"] > div > div:first-child {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 12px 12px 0 !important;
 }
 
-.recent-item {
-    display: block; padding: 6px 10px; border-radius: 6px;
-    font-size: 0.82rem; color: var(--text-mid);
-    cursor: pointer; transition: background 0.15s;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    margin-bottom: 1px;
+/* ═══ Sidebar buttons (Streamlit native) ═══ */
+[data-testid="stSidebar"] [data-testid="stButton"] button {
+    width: 100% !important;
+    text-align: left !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    font-size: 0.86rem !important;
+    color: var(--text-mid) !important;
+    font-weight: 500 !important;
+    justify-content: flex-start !important;
+    transition: background 0.15s !important;
 }
-.recent-item:hover { background: var(--border-light); }
+[data-testid="stSidebar"] [data-testid="stButton"] button:hover {
+    background: var(--green-light) !important;
+    color: var(--green) !important;
+}
+/* Primary button in sidebar (New chat) */
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] {
+    background: transparent !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    font-weight: 600 !important;
+    justify-content: center !important;
+    border-radius: 20px !important;
+    margin-bottom: 8px !important;
+}
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:hover {
+    background: var(--green-light) !important;
+    border-color: var(--green) !important;
+    color: var(--green) !important;
+}
 
-.sidebar-footer {
+/* Fixed bottom user card */
+.user-card-fixed {
+    position: fixed !important;
+    bottom: 0; left: 0; width: 260px;
+    background: var(--bg-sidebar);
     border-top: 1px solid var(--border);
-    padding: 12px 10px; margin-top: auto;
-    display: flex; align-items: center; gap: 8px;
+    border-right: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    z-index: 999;
 }
 .user-avatar {
-    width: 32px; height: 32px; border-radius: 50%;
+    width: 34px; height: 34px; border-radius: 50%;
     background: var(--green-light); color: var(--green);
     display: flex; align-items: center; justify-content: center;
-    font-weight: 600; font-size: 0.75rem;
+    font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
 }
-.user-name { font-size: 0.82rem; font-weight: 500; color: var(--text); }
-.user-plan { font-size: 0.68rem; color: var(--text-light); }
+.user-name { font-size: 0.85rem; font-weight: 600; color: var(--text); line-height: 1.2; }
+.user-plan { font-size: 0.7rem; color: var(--text-light); }
 
-/* ── Main Content (centered like ChatGPT) ── */
+/* ═══ Main center area (ChatGPT-style) ═══ */
 .main-center {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    min-height: 75vh; padding: 2rem;
+    min-height: calc(100vh - 120px);
+    padding: 0 1rem;
+    margin-top: -4rem;
 }
-
 .greeting {
-    font-size: 1.6rem; font-weight: 500; color: var(--text);
-    margin-bottom: 1.5rem; text-align: center;
+    font-size: 1.55rem; font-weight: 500; color: var(--text);
+    margin-bottom: 2rem; text-align: center;
 }
 
-/* Input bar */
-.input-bar {
-    width: 100%; max-width: 640px;
-    background: var(--input-bg); border-radius: var(--radius);
-    display: flex; align-items: center; gap: 8px;
-    padding: 12px 16px; border: 1px solid var(--border);
-    transition: border-color 0.2s, box-shadow 0.2s;
+/* ═══ Input bar ═══ */
+[data-testid="stTextInput"] input {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    padding: 14px 20px !important;
+    font-size: 0.92rem !important;
+    box-shadow: none !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
 }
-.input-bar:focus-within {
-    border-color: var(--green);
-    box-shadow: 0 0 0 3px rgba(26,122,76,0.08);
+[data-testid="stTextInput"] input:focus {
+    border-color: var(--green) !important;
+    box-shadow: 0 0 0 3px rgba(26,122,76,0.08) !important;
 }
-.input-bar-plus {
-    width: 28px; height: 28px; border-radius: 50%;
-    background: none; border: 1.5px solid var(--text-light);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--text-light); cursor: pointer; flex-shrink: 0;
+[data-testid="stTextInput"] > div {
+    border: none !important; background: transparent !important;
 }
-.input-bar-icons {
-    display: flex; align-items: center; gap: 6px; margin-left: auto;
-    color: var(--text-light);
-}
-.input-bar-icons > * { cursor: pointer; }
+[data-testid="stTextInput"] label { display: none !important; }
 
-/* Action chips */
+/* Chat input at bottom */
+[data-testid="stChatInput"] {
+    max-width: 700px !important;
+    margin: 0 auto !important;
+}
+[data-testid="stChatInput"] textarea {
+    border-radius: var(--radius) !important;
+    border: 1px solid var(--border) !important;
+    background: var(--input-bg) !important;
+}
+
+/* ═══ Mode chips ═══ */
 .action-chips {
-    display: flex; gap: 8px; margin-top: 16px;
+    display: flex; gap: 10px; margin-top: 12px;
     flex-wrap: wrap; justify-content: center;
 }
-.chip {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 16px; border-radius: 20px;
-    border: 1px solid var(--border); background: var(--bg);
-    font-size: 0.82rem; color: var(--text-mid);
-    cursor: pointer; transition: all 0.15s;
-    font-weight: 500;
+/* Override Streamlit buttons to look like chips */
+.chip-row [data-testid="stButton"] button {
+    background: transparent !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 22px !important;
+    color: var(--text-mid) !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+    padding: 9px 18px !important;
+    white-space: nowrap !important;
+    transition: all 0.15s !important;
 }
-.chip:hover {
-    border-color: var(--green); color: var(--green);
-    background: var(--green-light);
-}
-.chip svg { color: var(--text-light); }
-.chip:hover svg { color: var(--green); }
-
-/* ── Chat/Response Area ── */
-.response-card {
-    width: 100%; max-width: 700px;
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); padding: 1.5rem;
-    margin-top: 1.5rem;
+.chip-row [data-testid="stButton"] button:hover {
+    border-color: var(--green) !important;
+    color: var(--green) !important;
+    background: var(--green-light) !important;
 }
 
+/* ═══ Top bar ═══ */
+.top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px; border-bottom: 1px solid var(--border-light);
+}
+.top-bar-left {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.92rem; font-weight: 600; color: var(--text);
+}
+.status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    display: inline-block; margin-right: 4px;
+}
+
+/* ═══ Content cards ═══ */
 .review-output {
     background: var(--border-light);
     border-left: 3px solid var(--green);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     padding: 1.2rem 1.5rem;
-    font-size: 0.92rem; line-height: 1.75;
-    color: var(--text); margin: 1rem 0;
+    font-size: 0.92rem; line-height: 1.75; color: var(--text);
+    margin: 1rem 0;
 }
-
-.metric-row {
-    display: flex; gap: 12px; margin: 1rem 0;
-}
+.metric-row { display: flex; gap: 12px; margin: 1rem 0; }
 .metric-box {
-    flex: 1; text-align: center;
-    padding: 12px; border-radius: 10px;
-    background: var(--green-light);
+    flex: 1; text-align: center; padding: 14px;
+    border-radius: 12px; background: var(--green-light);
 }
 .metric-val { font-size: 1.3rem; font-weight: 700; color: var(--green); }
 .metric-lbl { font-size: 0.7rem; color: var(--text-mid); margin-top: 2px; }
 
-/* Rec cards */
 .rec-item {
     display: flex; align-items: flex-start; gap: 12px;
-    padding: 12px; border-radius: 10px;
+    padding: 14px; border-radius: 12px;
     border: 1px solid var(--border); margin-bottom: 6px;
     transition: border-color 0.15s;
 }
 .rec-item:hover { border-color: var(--green); }
 .rec-rank {
-    width: 30px; height: 30px; min-width: 30px; border-radius: 8px;
+    width: 32px; height: 32px; min-width: 32px; border-radius: 8px;
     background: var(--green); color: white;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.78rem;
+    font-weight: 700; font-size: 0.8rem;
 }
-.rec-name { font-weight: 600; font-size: 0.88rem; color: var(--text); }
+.rec-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
 .rec-cat {
-    display: inline-block; padding: 1px 8px; border-radius: 4px;
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
     background: var(--green-badge); color: var(--green);
-    font-size: 0.68rem; font-weight: 600;
+    font-size: 0.7rem; font-weight: 600;
 }
 .rec-why { font-size: 0.8rem; color: var(--text-mid); margin-top: 4px; line-height: 1.4; }
 
-/* Streamlit overrides */
-[data-testid="stTextInput"] input {
-    background: transparent !important; border: none !important;
-    box-shadow: none !important; padding: 0 !important;
-    font-size: 0.92rem !important;
+/* Section header */
+.section-header {
+    display: flex; align-items: center; gap: 10px;
+    margin: 1.5rem 0 1rem; color: var(--text);
 }
-[data-testid="stTextInput"] > div { border: none !important; }
-[data-testid="stTextInput"] label { display: none !important; }
+.section-header svg { color: var(--green); }
 
-[data-testid="stButton"] button[kind="primary"] {
+/* ═══ GLOBAL button/toggle/slider green overrides ═══ */
+[data-testid="stButton"] button[kind="primary"],
+button[kind="primary"] {
     background: var(--green) !important; color: white !important;
-    border: none !important; border-radius: 20px !important;
-    font-weight: 600 !important; padding: 8px 20px !important;
+    border: none !important; border-radius: 22px !important;
+    font-weight: 600 !important; padding: 10px 24px !important;
 }
-[data-testid="stButton"] button[kind="primary"]:hover {
+[data-testid="stButton"] button[kind="primary"]:hover,
+button[kind="primary"]:hover {
     background: var(--green-hover) !important;
 }
-[data-testid="stButton"] button[kind="secondary"] {
-    background: transparent !important; border: 1px solid var(--border) !important;
-    border-radius: 20px !important; color: var(--text-mid) !important;
+
+/* Toggle switch green */
+[data-testid="stToggle"] [role="checkbox"][aria-checked="true"] {
+    background-color: var(--green) !important;
+}
+[data-testid="stToggle"] span[data-checked="true"] {
+    background-color: var(--green) !important;
+}
+label[data-testid="stWidgetLabel"] + div [role="checkbox"][aria-checked="true"] {
+    background-color: var(--green) !important;
+}
+div[data-baseweb="toggle"] > div:first-child {
+    background-color: var(--green) !important;
 }
 
+/* Slider green */
+[data-testid="stSlider"] [role="slider"] {
+    background-color: var(--green) !important;
+}
+[data-testid="stSlider"] div[data-testid="stTickBar"] > div {
+    background-color: var(--green) !important;
+}
+[data-baseweb="slider"] div[role="slider"] {
+    background-color: var(--green) !important; border-color: var(--green) !important;
+}
+[data-baseweb="slider"] div[data-testid*="Track"] > div:first-child {
+    background-color: var(--green) !important;
+}
+.stSlider > div > div > div > div {
+    background-color: var(--green) !important;
+}
+
+/* ═══ Sidebar section labels ═══ */
+.nav-section {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-light); font-weight: 600;
+    padding: 14px 12px 4px; margin-top: 4px;
+}
+
+/* ═══ Chat messages ═══ */
 [data-testid="stChatMessage"] {
-    background: transparent !important; border: none !important;
     max-width: 700px; margin: 0 auto;
+    background: transparent !important; border: none !important;
 }
 
+/* ═══ Radio hide ═══ */
+[data-testid="stRadio"] { display: none !important; }
+/* Selectbox styling */
 [data-testid="stSelectbox"] > div > div {
     border-radius: 10px !important;
 }
 
+/* Sidebar bottom padding so content doesn't go under fixed user card */
+.sidebar-bottom-spacer { height: 70px; }
+
+/* Preference panel */
+.pref-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 1.5rem;
+}
+
 hr { display: none !important; }
 
-/* Radio as hidden (we use custom nav) */
-[data-testid="stRadio"] { display: none !important; }
+/* Streamlit toggle internal override */
+[data-testid="stCheckbox"] input:checked + div,
+.st-emotion-cache-1gulkj5,
+.st-emotion-cache-q16mip {
+    background-color: var(--green) !important;
+}
+
+/* Number input */
+[data-testid="stNumberInput"] input {
+    border-radius: 10px !important;
+}
+
+/* Active sidebar button highlight */
+[data-testid="stSidebar"] [data-testid="stButton"] button:active,
+[data-testid="stSidebar"] [data-testid="stButton"] button:focus {
+    background: var(--green-light) !important;
+    color: var(--green) !important;
+}
 </style>
 """
