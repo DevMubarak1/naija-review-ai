@@ -1,263 +1,311 @@
-"""NaijaReview AI — Clean Dashboard (Light Theme)"""
+"""NaijaReview AI — ChatGPT-style Dashboard"""
 import uuid, requests, streamlit as st
-from app.styles import CUSTOM_CSS
+from app.styles import CUSTOM_CSS, LOGO_SVG, LOGO_SVG_SMALL, ICON
 
 st.set_page_config(page_title="NaijaReview AI", page_icon="🇳🇬", layout="wide", initial_sidebar_state="expanded")
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 API = "http://localhost:8000"
 
-def health():
-    try: return requests.get(f"{API}/health", timeout=3).json()
-    except: return None
+# Session defaults
+if "mode" not in st.session_state:
+    st.session_state.mode = "home"
+if "msgs" not in st.session_state:
+    st.session_state.msgs = []
+if "sid" not in st.session_state:
+    st.session_state.sid = str(uuid.uuid4())
+if "result" not in st.session_state:
+    st.session_state.result = None
 
-# ── SIDEBAR ──
+
+def api_health():
+    try:
+        return requests.get(f"{API}/health", timeout=3).json()
+    except Exception:
+        return None
+
+
+# ══════════════════════════════════════════
+# SIDEBAR (ChatGPT style)
+# ══════════════════════════════════════════
 with st.sidebar:
-    st.markdown("""
-    <div style="padding:1rem 0.5rem 0.5rem;">
-        <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:#1a7a4c;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;">NR</div>
-            <div><div style="font-weight:700;font-size:1rem;color:#1a1d21;">NaijaReview AI</div>
-            <div style="font-size:0.72rem;color:#8492a6;">AI that understands Naija you</div></div>
+    # Logo + title
+    st.markdown(f'''
+    <div class="sidebar-header">
+        <div class="sidebar-logo">{LOGO_SVG_SMALL} NaijaReview AI</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    # New chat button
+    if st.button("➕  New chat", key="new_chat", use_container_width=True):
+        st.session_state.mode = "home"
+        st.session_state.result = None
+        st.session_state.msgs = []
+        st.session_state.sid = str(uuid.uuid4())
+        st.rerun()
+
+    # Nav items
+    st.markdown(f'''
+    <div class="nav-btn" onclick="void(0)">{ICON["search"]} Search chats</div>
+    <div class="nav-btn" onclick="void(0)">{ICON["dots"]} More</div>
+    ''', unsafe_allow_html=True)
+
+    # Modes section
+    st.markdown('<div class="nav-section">Modes</div>', unsafe_allow_html=True)
+
+    mode_labels = {
+        "review": "✏️ Generate Review",
+        "recommend": "🎯 Get Recommendations",
+        "chat": "💬 Chat with AI",
+    }
+    mode = st.radio("Mode", list(mode_labels.keys()),
+                     format_func=lambda x: mode_labels[x],
+                     label_visibility="collapsed", key="mode_radio")
+    # Render custom nav buttons for modes
+    for k, v in mode_labels.items():
+        icon_key = {"review": "pencil", "recommend": "target", "chat": "chat"}[k]
+        active = "nav-btn-active" if st.session_state.mode == k else ""
+        st.markdown(f'<div class="nav-btn {active}" id="nav-{k}">{ICON[icon_key]} {v.split(" ", 1)[1] if " " in v else v}</div>',
+                    unsafe_allow_html=True)
+
+    # Settings
+    st.markdown(f'''
+    <div class="nav-section">Settings</div>
+    <div class="nav-btn">{ICON["settings"]} Preferences</div>
+    <div class="nav-btn">{ICON["history"]} History</div>
+    ''', unsafe_allow_html=True)
+
+    # Recents
+    st.markdown('<div class="nav-section">Recents</div>', unsafe_allow_html=True)
+    recents = [
+        "Samsung Galaxy Buds review",
+        "Restaurant recommendations Lagos",
+        "Book ratings analysis",
+    ]
+    for r in recents:
+        st.markdown(f'<div class="recent-item">{ICON["chat"]} {r}</div>', unsafe_allow_html=True)
+
+    # Footer
+    st.markdown('''
+    <div class="sidebar-footer">
+        <div class="user-avatar">RM</div>
+        <div>
+            <div class="user-name">Raji Mubarak</div>
+            <div class="user-plan">Team Cerebral</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-    st.markdown("---")
+    ''', unsafe_allow_html=True)
 
-    page = st.radio("", ["🏠  Dashboard", "✏️  User Modeling", "🎯  Recommendations", "💬  Conversations", "⚙️  Settings"],
-                     label_visibility="collapsed")
+    # Actual mode selector (hidden radio syncs with buttons)
+    selected = st.radio("_mode", ["home", "review", "recommend", "chat"],
+                        label_visibility="collapsed", key="_mode_sel")
+    if selected != st.session_state.mode:
+        st.session_state.mode = selected
 
-    st.markdown("---")
-    st.markdown("""
-    <div style="background:#f8f9fb;border-radius:10px;padding:1rem;margin-top:auto;">
-        <div style="font-weight:700;font-size:0.82rem;color:#1a7a4c;">About NaijaReview AI</div>
-        <div style="font-size:0.75rem;color:#8492a6;margin-top:4px;line-height:1.5;">
-            Agentic AI system that understands Nigerian context, language, and preferences to generate reviews and personalized recommendations.
-        </div>
-        <div style="margin-top:8px;">
-            <span style="display:inline-block;width:14px;height:14px;background:#1a7a4c;border-radius:3px;margin-right:4px;"></span>
-            <span style="display:inline-block;width:14px;height:14px;background:#145f3b;border-radius:3px;"></span>
-        </div>
+
+# ══════════════════════════════════════════
+# MAIN CONTENT
+# ══════════════════════════════════════════
+h = api_health()
+
+# Top bar (minimal)
+st.markdown(f'''
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 24px 0;">
+    <div style="display:flex;align-items:center;gap:8px;font-size:0.92rem;font-weight:600;color:#111827;">
+        {LOGO_SVG_SMALL}
+        <span>NaijaReview AI</span>
+        <span style="font-size:0.7rem;color:#9ca3af;font-weight:400;">▾</span>
     </div>
-    """, unsafe_allow_html=True)
+    <div style="display:flex;align-items:center;gap:12px;">
+        <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.75rem;color:{'#22c55e' if h else '#ef4444'};font-weight:500;">
+            <span style="width:6px;height:6px;border-radius:50%;background:{'#22c55e' if h else '#ef4444'};display:inline-block;"></span>
+            {'Online' if h else 'Offline'}
+        </span>
+    </div>
+</div>
+''', unsafe_allow_html=True)
 
-# ── TOP BAR ──
-h = health()
-tc1, tc2 = st.columns([4, 1])
-with tc1:
-    st.markdown('<div class="top-bar-left"><h2>Welcome back! 👋</h2><p>What would you like to do today?</p></div>', unsafe_allow_html=True)
-with tc2:
-    if h:
-        st.markdown('<div class="status-pill"><span class="dot"></span> System Online</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="status-pill" style="color:#ef4444;"><span class="dot" style="background:#ef4444;"></span> Offline</div>', unsafe_allow_html=True)
 
 # ════════════════════════════════════════
-# DASHBOARD PAGE
+# HOME (ChatGPT welcome screen)
 # ════════════════════════════════════════
-if "Dashboard" in page:
-    # Task Cards
-    c1, c2 = st.columns(2, gap="medium")
-    with c1:
-        st.markdown("""
-        <div class="task-card">
-            <div class="task-icon task-icon-a">📝</div>
-            <h3>Generate Review (Task A)</h3>
-            <p>Generate a personalized review and rating for any product or service.</p>
-        </div>""", unsafe_allow_html=True)
-        if st.button("Generate Review →", type="primary", key="go_a"):
-            st.session_state["_page"] = "modeling"
-    with c2:
-        st.markdown("""
-        <div class="task-card">
-            <div class="task-icon task-icon-b">🎯</div>
-            <h3>Get Recommendations (Task B)</h3>
-            <p>Get AI-powered recommendations tailored to your preferences.</p>
-        </div>""", unsafe_allow_html=True)
-        if st.button("Get Recommendations →", type="primary", key="go_b"):
-            st.session_state["_page"] = "recs"
+if st.session_state.mode == "home":
+    st.markdown('''
+    <div class="main-center">
+        <div class="greeting">Good to see you, Dev Mubarak. 👋</div>
+    </div>
+    ''', unsafe_allow_html=True)
 
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    # Input bar
+    col_pad1, col_input, col_pad2 = st.columns([1, 3, 1])
+    with col_input:
+        query = st.text_input("Ask anything", placeholder="Ask anything about reviews, recommendations...",
+                              label_visibility="collapsed", key="home_input")
 
-    # Profile + Activity
-    c1, c2 = st.columns([3, 2], gap="medium")
-    with c1:
-        st.markdown("""
-        <div class="profile-card">
-            <h4>👤 Your Profile Summary</h4>
-            <div style="display:flex;align-items:center;">
-                <div class="profile-avatar">NR</div>
-                <div>
-                    <span class="profile-name">Naija Reviewer</span>
-                    <span class="profile-location">Lagos, Nigeria</span>
-                    <div style="font-size:0.75rem;color:#8492a6;margin-top:2px;">Active since May 2026</div>
-                </div>
-            </div>
-            <div class="stat-row">
-                <div class="stat-item"><div class="stat-value">23</div><div class="stat-label">Reviews Written</div></div>
-                <div class="stat-item"><div class="stat-value">4.2</div><div class="stat-label">Avg Rating</div></div>
-                <div class="stat-item"><div class="stat-value">12</div><div class="stat-label">Categories</div></div>
-                <div class="stat-item"><div class="stat-value">156</div><div class="stat-label">Items Explored</div></div>
-            </div>
-            <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid #f0f3f7;">
-                <div style="font-size:0.82rem;font-weight:600;color:#1a7a4c;margin-bottom:6px;">✨ Your Taste Profile</div>
-                <div style="font-size:0.82rem;color:#4a5568;margin-bottom:8px;">You love trying new spots, especially Nigerian food 🍛, and you're big on honest reviews.</div>
-                <span class="tag">Foodie</span><span class="tag">Honest Reviewer</span><span class="tag">Loves Local</span><span class="tag">Explores Often</span>
-            </div>
-        </div>""", unsafe_allow_html=True)
+        # Action chips (mode selectors)
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            if st.button("✏️  Generate Review", key="chip_review", use_container_width=True):
+                st.session_state.mode = "review"
+                st.rerun()
+        with c2:
+            if st.button("🎯  Get Recommendations", key="chip_rec", use_container_width=True):
+                st.session_state.mode = "recommend"
+                st.rerun()
+        with c3:
+            if st.button("💬  Chat with AI", key="chip_chat", use_container_width=True):
+                st.session_state.mode = "chat"
+                st.rerun()
 
-    with c2:
-        st.markdown("""
-        <div class="activity-card">
-            <h4 style="margin:0 0 0.8rem;font-size:0.95rem;font-weight:700;">🕐 Recent Activity</h4>
-            <div class="activity-item"><span class="activity-text">💬 Generated review for Jollof Spot, Lekki</span><span class="activity-time">2 mins ago</span></div>
-            <div class="activity-item"><span class="activity-text">⭐ Rated "Atomic Habits" by James Clear</span><span class="activity-time">1 hour ago</span></div>
-            <div class="activity-item"><span class="activity-text">💬 Asked for book recommendations</span><span class="activity-time">3 hours ago</span></div>
-            <div class="activity-item"><span class="activity-text">🎯 Got recommendations for tech gadgets</span><span class="activity-time">5 hours ago</span></div>
-            <div class="activity-item"><span class="activity-text">✅ Generated review for Nike Air Max 270</span><span class="activity-time">1 day ago</span></div>
-        </div>""", unsafe_allow_html=True)
+        # If they typed something in the home input, go to chat
+        if query:
+            st.session_state.mode = "chat"
+            st.session_state.msgs.append({"role": "user", "content": query})
+            st.rerun()
 
-    # Chat Bar
-    st.markdown("""
-    <div class="chat-bar">
-        <h4>💬 Chat with NaijaReview AI</h4>
-        <p>Ask anything about products, get recommendations, or refine your preferences.</p>
-    </div>""", unsafe_allow_html=True)
-    chat_q = st.text_input("Chat", placeholder="E.g., Abeg recommend good suya spot in Abuja...", label_visibility="collapsed", key="dash_chat")
-    st.markdown("""
-    <div style="margin-top:4px;">
-        <span style="font-size:0.78rem;font-weight:600;color:#8492a6;">Try asking:</span>
-        <span class="suggestion-chip">Recommend a good restaurant in VI</span>
-        <span class="suggestion-chip">Books like Rich Dad Poor Dad</span>
-        <span class="suggestion-chip">Best headphones under 50k</span>
-        <span class="suggestion-chip">Why did you recommend this?</span>
-    </div>""", unsafe_allow_html=True)
 
 # ════════════════════════════════════════
-# USER MODELING PAGE
+# GENERATE REVIEW (Task A)
 # ════════════════════════════════════════
-elif "Modeling" in page:
-    st.markdown("### ✏️ Generate Review & Rating")
-    c1, c2 = st.columns([1, 1], gap="large")
-    with c1:
-        uid = st.text_input("User ID", "demo_user_001", key="m_uid")
-        st.checkbox("Use sample review history", True, key="m_sample")
-        item = st.text_input("Item Name", "Samsung Galaxy Buds3 Pro")
-        cat = st.selectbox("Category", ["Electronics","Restaurants","Books","Movies","Fashion"])
-        desc = st.text_area("Description", "Premium wireless earbuds with ANC and 360 Audio.", height=80)
-        is_ng = st.toggle("🇳🇬 Nigerian Mode", True)
-        region = st.selectbox("Region", ["Lagos","Abuja","Port Harcourt","Kano"]) if is_ng else ""
+elif st.session_state.mode == "review":
+    col_pad1, col_main, col_pad2 = st.columns([1, 3, 1])
+    with col_main:
+        st.markdown(f'''
+        <div style="display:flex;align-items:center;gap:10px;margin:1.5rem 0 1rem;">
+            {ICON["pencil"]}
+            <span style="font-size:1.1rem;font-weight:600;color:#111827;">Generate Review (Task A)</span>
+        </div>
+        ''', unsafe_allow_html=True)
 
-    with c2:
-        if st.button("Generate Review →", type="primary", use_container_width=True, key="gen"):
-            reviews = [
-                {"rating":5,"review_text":"Amazing! Best purchase this year.","item_name":"Wireless Headphones","category":"Electronics"},
-                {"rating":4,"review_text":"Pretty good. Minor packaging issue.","item_name":"Phone Case","category":"Electronics"},
-                {"rating":2,"review_text":"Disappointed. Returning.","item_name":"USB Cable","category":"Electronics"},
-                {"rating":5,"review_text":"Best jollof in Lagos!","item_name":"Mama Put","category":"Restaurants"},
-                {"rating":3,"review_text":"Okay book. Lost me mid-chapters.","item_name":"Half of a Yellow Sun","category":"Books"},
-            ] if st.session_state.get("m_sample") else []
-            with st.spinner("Agent reasoning..."):
+        uid = st.text_input("User ID", "demo_user_001", key="a_uid")
+        c1, c2 = st.columns(2)
+        with c1:
+            item = st.text_input("Product / Item", "Samsung Galaxy Buds3 Pro")
+            cat = st.selectbox("Category", ["Electronics", "Restaurants", "Books", "Fashion", "Movies"])
+        with c2:
+            desc = st.text_area("Description (optional)", "Premium wireless earbuds with ANC and 360 Audio.", height=100)
+            is_ng = st.toggle("🇳🇬 Nigerian Mode", True, key="a_ng")
+
+        if st.button("Generate Review →", type="primary", use_container_width=True, key="gen_btn"):
+            sample_reviews = [
+                {"rating": 5, "review_text": "Amazing! Best purchase this year.", "item_name": "Wireless Headphones", "category": "Electronics"},
+                {"rating": 4, "review_text": "Pretty good. Minor packaging issue.", "item_name": "Phone Case", "category": "Electronics"},
+                {"rating": 2, "review_text": "Disappointed. Returning.", "item_name": "USB Cable", "category": "Electronics"},
+                {"rating": 5, "review_text": "Best jollof in Lagos no cap!", "item_name": "Mama Put", "category": "Restaurants"},
+                {"rating": 3, "review_text": "Okay book. Lost me mid-chapters.", "item_name": "Half of a Yellow Sun", "category": "Books"},
+            ]
+            with st.spinner("Generating review..."):
                 try:
                     r = requests.post(f"{API}/task-a/generate", json={
-                        "user_id":uid,"item_name":item,"item_category":cat,
-                        "item_description":desc,"user_reviews":reviews,
-                        "is_nigerian":is_ng,"region":region,
+                        "user_id": uid, "item_name": item, "item_category": cat,
+                        "item_description": desc, "user_reviews": sample_reviews,
+                        "is_nigerian": is_ng, "region": "Lagos",
                     }, timeout=120)
-                    if r.ok: st.session_state["a_out"] = r.json()
-                    else: st.error(r.text[:200])
-                except Exception as e: st.error(str(e)[:200])
+                    if r.ok:
+                        st.session_state.result = r.json()
+                    else:
+                        st.error(f"Error: {r.text[:200]}")
+                except Exception as e:
+                    st.error(str(e)[:200])
 
-        if "a_out" in st.session_state:
-            d = st.session_state["a_out"]
-            mc = st.columns(3)
-            mc[0].metric("Rating", f"{d['rating']}★")
-            mc[1].metric("Confidence", f"{d['confidence']:.0%}")
-            mc[2].metric("Words", len(d["review_text"].split()))
-            st.markdown(f'<div class="review-output">{d["review_text"]}</div>', unsafe_allow_html=True)
-            with st.expander("Agent Reasoning"): st.write(d.get("reasoning","—"))
+        # Show result
+        if st.session_state.result and st.session_state.mode == "review":
+            d = st.session_state.result
+            st.markdown(f'''
+            <div class="metric-row">
+                <div class="metric-box"><div class="metric-val">{d.get("rating", 0):.1f}★</div><div class="metric-lbl">Rating</div></div>
+                <div class="metric-box"><div class="metric-val">{d.get("confidence", 0):.0%}</div><div class="metric-lbl">Confidence</div></div>
+                <div class="metric-box"><div class="metric-val">{len(d.get("review_text", "").split())}</div><div class="metric-lbl">Words</div></div>
+            </div>
+            <div class="review-output">{d.get("review_text", "")}</div>
+            ''', unsafe_allow_html=True)
+
+            with st.expander("🧠 Agent Reasoning"):
+                st.write(d.get("reasoning", "—"))
+            with st.expander("👤 Persona"):
+                st.json(d.get("persona", {}))
+
 
 # ════════════════════════════════════════
-# RECOMMENDATIONS PAGE
+# RECOMMENDATIONS (Task B)
 # ════════════════════════════════════════
-elif "Recommendations" in page:
-    st.markdown("### 🎯 Personalized Recommendations")
-    c1, c2 = st.columns([2, 3], gap="large")
-    with c1:
-        uid = st.text_input("User ID", "demo_user_001", key="r_uid")
-        q = st.text_input("What are you looking for?", placeholder="Good earbuds for Lagos traffic")
-        k = st.slider("Results", 3, 15, 8)
-        cf = st.selectbox("Category filter", [None,"Electronics","Restaurants","Books"], key="r_cf")
-        if st.button("Get Recommendations →", type="primary", use_container_width=True, key="rec"):
+elif st.session_state.mode == "recommend":
+    col_pad1, col_main, col_pad2 = st.columns([1, 3, 1])
+    with col_main:
+        st.markdown(f'''
+        <div style="display:flex;align-items:center;gap:10px;margin:1.5rem 0 1rem;">
+            {ICON["target"]}
+            <span style="font-size:1.1rem;font-weight:600;color:#111827;">Get Recommendations (Task B)</span>
+        </div>
+        ''', unsafe_allow_html=True)
+
+        uid = st.text_input("User ID", "demo_user_001", key="b_uid")
+        query = st.text_input("What are you looking for?", placeholder="e.g. Good earbuds for Lagos traffic", key="b_query")
+        c1, c2 = st.columns(2)
+        with c1:
+            k = st.slider("Number of results", 3, 15, 8)
+        with c2:
+            cat_filter = st.selectbox("Category filter", [None, "Electronics", "Restaurants", "Books"], key="b_cat")
+
+        if st.button("Get Recommendations →", type="primary", use_container_width=True, key="rec_btn"):
             with st.spinner("Searching & ranking..."):
                 try:
                     r = requests.post(f"{API}/task-b/recommend", json={
-                        "user_id":uid,"query":q,"top_k":k,"is_nigerian":True,"category_filter":cf,
-                        "user_reviews":[
-                            {"rating":5,"review_text":"Love this!","item_name":"JBL Speaker","category":"Electronics"},
-                            {"rating":4,"review_text":"Great read","item_name":"Things Fall Apart","category":"Books"},
+                        "user_id": uid, "query": query, "top_k": k,
+                        "is_nigerian": True, "category_filter": cat_filter,
+                        "user_reviews": [
+                            {"rating": 5, "review_text": "Love this!", "item_name": "JBL Speaker", "category": "Electronics"},
+                            {"rating": 4, "review_text": "Great read", "item_name": "Things Fall Apart", "category": "Books"},
                         ]
                     }, timeout=120)
-                    if r.ok: st.session_state["recs"] = r.json()
-                    else: st.error(r.text[:200])
-                except Exception as e: st.error(str(e)[:200])
-    with c2:
-        if "recs" in st.session_state:
-            data = st.session_state["recs"]
-            st.caption(f"{data.get('total_candidates_considered',0)} candidates evaluated")
-            for rec in data.get("recommendations",[]):
-                st.markdown(f"""<div class="rec-item">
-                    <div class="rec-rank">{rec['rank']}</div>
+                    if r.ok:
+                        st.session_state.result = r.json()
+                    else:
+                        st.error(r.text[:200])
+                except Exception as e:
+                    st.error(str(e)[:200])
+
+        if st.session_state.result and st.session_state.mode == "recommend":
+            data = st.session_state.result
+            st.caption(f"{data.get('total_candidates_considered', 0)} candidates evaluated")
+            for rec in data.get("recommendations", []):
+                st.markdown(f'''<div class="rec-item">
+                    <div class="rec-rank">{rec.get("rank", "")}</div>
                     <div style="flex:1;">
-                        <div class="rec-name">{rec['item_name']}</div>
-                        <span class="rec-cat">{rec.get('category','—')}</span>
-                        <div class="rec-why">{rec.get('explanation','')[:180]}</div>
+                        <div class="rec-name">{rec.get("item_name", "")}</div>
+                        <span class="rec-cat">{rec.get("category", "—")}</span>
+                        <div class="rec-why">{rec.get("explanation", "")[:200]}</div>
                     </div>
-                </div>""", unsafe_allow_html=True)
+                </div>''', unsafe_allow_html=True)
+
 
 # ════════════════════════════════════════
-# CONVERSATIONS PAGE
+# CHAT (Conversational)
 # ════════════════════════════════════════
-elif "Conversations" in page:
-    st.markdown("### 💬 Chat with NaijaReview AI")
-    uid = st.text_input("User ID", "demo_user_001", key="c_uid")
-    if "sid" not in st.session_state: st.session_state["sid"] = str(uuid.uuid4())
-    if "msgs" not in st.session_state: st.session_state["msgs"] = []
-    for m in st.session_state["msgs"]:
-        with st.chat_message(m["role"]): st.write(m["content"])
-    if p := st.chat_input("Ask for recommendations..."):
-        st.session_state["msgs"].append({"role":"user","content":p})
-        with st.chat_message("user"): st.write(p)
+elif st.session_state.mode == "chat":
+    # Chat history
+    for m in st.session_state.msgs:
+        with st.chat_message(m["role"]):
+            st.write(m["content"])
+
+    # Chat input
+    if prompt := st.chat_input("Ask for recommendations, reviews, or anything..."):
+        st.session_state.msgs.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.write(prompt)
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
                     r = requests.post(f"{API}/task-b/chat", json={
-                        "user_id":uid,"message":p,"session_id":st.session_state["sid"],"is_nigerian":True
+                        "user_id": "demo_user_001",
+                        "message": prompt,
+                        "session_id": st.session_state.sid,
+                        "is_nigerian": True,
                     }, timeout=60)
                     if r.ok:
-                        resp = r.json()["response"]; st.write(resp)
-                        st.session_state["msgs"].append({"role":"assistant","content":resp})
-                    else: st.error(r.text[:200])
-                except Exception as e: st.error(str(e)[:200])
-
-# ════════════════════════════════════════
-# SETTINGS PAGE
-# ════════════════════════════════════════
-elif "Settings" in page:
-    st.markdown("### ⚙️ Settings")
-    st.markdown("#### Training")
-    c1, c2, c3 = st.columns(3)
-    amz = c1.number_input("Amazon reviews", 20000, step=5000)
-    ylp = c2.number_input("Yelp reviews", 15000, step=5000)
-    gdr = c3.number_input("Goodreads reviews", 10000, step=5000)
-    if st.button("Train All Models", type="primary"):
-        with st.spinner("Training..."):
-            try:
-                r = requests.post(f"{API}/train", json={"amazon_max":amz,"yelp_max":ylp,"goodreads_max":gdr}, timeout=600)
-                if r.ok:
-                    d = r.json()
-                    st.success(f"✅ {d['total_reviews']:,} reviews · {d['total_users']:,} users · {d['total_items']:,} items")
-                else: st.error(r.text[:200])
-            except Exception as e: st.error(str(e)[:200])
-    st.markdown("#### System Info")
-    if h:
-        st.json(h)
+                        resp = r.json().get("response", "")
+                        st.write(resp)
+                        st.session_state.msgs.append({"role": "assistant", "content": resp})
+                    else:
+                        st.error(r.text[:200])
+                except Exception as e:
+                    st.error(str(e)[:200])
