@@ -122,7 +122,7 @@ if "Dashboard" in page:
         <h4>💬 Chat with NaijaReview AI</h4>
         <p>Ask anything about products, get recommendations, or refine your preferences.</p>
     </div>""", unsafe_allow_html=True)
-    chat_q = st.text_input("", placeholder="E.g., Abeg recommend good suya spot in Abuja...", label_visibility="collapsed", key="dash_chat")
+    chat_q = st.text_input("Chat", placeholder="E.g., Abeg recommend good suya spot in Abuja...", label_visibility="collapsed", key="dash_chat")
     st.markdown("""
     <div style="margin-top:4px;">
         <span style="font-size:0.78rem;font-weight:600;color:#8492a6;">Try asking:</span>
