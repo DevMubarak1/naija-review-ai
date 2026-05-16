@@ -1,391 +1,185 @@
-"""NaijaReview AI — Styles (ChatGPT-inspired, white/green theme)"""
+"""NaijaReview AI — Styles & SVG Assets"""
 
-# SVG Logo for NaijaReview AI
-LOGO_SVG = '''<svg width="32" height="32" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="36" height="36" rx="10" fill="#1a7a4c"/>
-  <path d="M8 12 L18 8 L28 12 L28 24 L18 28 L8 24Z" fill="none" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-  <path d="M18 8 L18 28" stroke="white" stroke-width="1.2" opacity="0.4"/>
-  <path d="M8 12 L28 12" stroke="white" stroke-width="1.2" opacity="0.4"/>
-  <circle cx="18" cy="17" r="4" fill="white" opacity="0.9"/>
-  <path d="M16 17 L17.5 18.5 L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="12" cy="22" r="1.5" fill="white" opacity="0.5"/>
-  <circle cx="24" cy="22" r="1.5" fill="white" opacity="0.5"/>
-</svg>'''
+# ── Logos ──
+LOGO = '<svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#1a7a4c"/><path d="M8 12L18 8l10 4v12l-10 4-10-4Z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><circle cx="18" cy="17" r="4" fill="#fff" opacity=".9"/><path d="M16 17l1.5 1.5L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+LOGO_SM = '<svg width="22" height="22" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#1a7a4c"/><circle cx="18" cy="17" r="4" fill="#fff" opacity=".9"/><path d="M16 17l1.5 1.5L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
-LOGO_SVG_SMALL = '''<svg width="26" height="26" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="36" height="36" rx="10" fill="#1a7a4c"/>
-  <path d="M8 12 L18 8 L28 12 L28 24 L18 28 L8 24Z" fill="none" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-  <circle cx="18" cy="17" r="4" fill="white" opacity="0.9"/>
-  <path d="M16 17 L17.5 18.5 L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>'''
+# ── Avatars ──
+AV_USER = '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#e8f5ee"/><circle cx="14" cy="10" r="4.5" fill="#1a7a4c"/><path d="M5 24c0-5 4-9 9-9s9 4 9 9" fill="#1a7a4c"/></svg>'
+AV_AI = '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#1a7a4c"/><circle cx="14" cy="12" r="3.5" fill="#fff" opacity=".9"/><path d="M12 12l1.2 1.2L15 11" stroke="#1a7a4c" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="19" width="12" height="2" rx="1" fill="#fff" opacity=".4"/></svg>'
+STOP_IC = '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" rx="2" fill="#9ca3af"/></svg>'
 
-# SVG Icons — clean, properly sized
-ICON = {
-    "new_chat": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v12M3 9h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-    "search": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.6"/><path d="M12 12l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
-    "more": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="4" cy="9" r="1.3" fill="currentColor"/><circle cx="9" cy="9" r="1.3" fill="currentColor"/><circle cx="14" cy="9" r="1.3" fill="currentColor"/></svg>',
-    "pencil": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M13 2.5l2.5 2.5L6 14.5H3.5V12L13 2.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 4.5l2.5 2.5" stroke="currentColor" stroke-width="1.5"/></svg>',
-    "target": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="1" fill="currentColor"/></svg>',
-    "chat": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4h12a1 1 0 011 1v7a1 1 0 01-1 1H7l-4 3V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
-    "settings": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.7 3.7l1.4 1.4M12.9 12.9l1.4 1.4M3.7 14.3l1.4-1.4M12.9 5.1l1.4-1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
-    "history": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 5v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    "user": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-    "collapse": '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 2v14" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 7.5L13 9l-2.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    # Mode chip icons (bigger, more detailed)
-    "chip_review": '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="2" width="12" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M7 6h6M7 9h6M7 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="14" cy="14" r="3.5" fill="white" stroke="currentColor" stroke-width="1.3"/><path d="M13 14l1 1 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    "chip_recommend": '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2l2.2 4.4 4.8.7-3.5 3.4.8 4.8L10 13l-4.3 2.3.8-4.8L3 7.1l4.8-.7L10 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
-    "chip_chat": '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 4h14a1 1 0 011 1v8a1 1 0 01-1 1H8l-5 4V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="7" cy="9" r="1" fill="currentColor"/><circle cx="10" cy="9" r="1" fill="currentColor"/><circle cx="13" cy="9" r="1" fill="currentColor"/></svg>',
-}
+# ── Inline SVG icons (Heroicons-inspired, 18x18) ──
+IC_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+IC_SEARCH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>'
+IC_MORE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>'
+IC_EDIT = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+IC_STAR = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'
+IC_CHAT = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'
+IC_GEAR = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>'
+IC_CLOCK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'
+IC_TRASH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>'
+IC_INFO = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01" stroke-linecap="round"/></svg>'
+IC_SAVE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>'
+IC_SPARK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L9.5 8.5 3 10l5 4-1.5 7L12 17.5 17.5 21 16 14l5-4-6.5-1.5L12 2z"/></svg>'
 
-CUSTOM_CSS = """
+
+def nav_item(svg_icon, label):
+    """Return HTML for a sidebar nav item with inline SVG."""
+    return f'''<div style="display:flex;align-items:center;gap:10px;padding:7px 12px;
+        border-radius:8px;cursor:pointer;color:#4b5563;font-size:0.85rem;font-weight:500;
+        transition:background .15s;"
+        onmouseover="this.style.background='#e8f5ee';this.style.color='#1a7a4c'"
+        onmouseout="this.style.background='transparent';this.style.color='#4b5563'">
+        <span style="flex-shrink:0;display:flex;align-items:center;">{svg_icon}</span>
+        <span>{label}</span>
+    </div>'''
+
+
+CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-:root {
-    --bg: #ffffff;
-    --bg-sidebar: #f9fafb;
-    --green: #1a7a4c;
-    --green-hover: #15633e;
-    --green-light: #e8f5ee;
-    --green-badge: #dcf5e7;
-    --text: #111827;
-    --text-mid: #4b5563;
-    --text-light: #9ca3af;
-    --border: #e5e7eb;
-    --border-light: #f3f4f6;
-    --input-bg: #f3f4f6;
-    --radius: 32px;
-    --radius-sm: 12px;
+:root{
+    --bg:#fff;--bg2:#f9fafb;--g:#1a7a4c;--gh:#15633e;--gl:#e8f5ee;--gb:#dcf5e7;
+    --t:#111827;--tm:#4b5563;--tl:#9ca3af;--b:#e5e7eb;--bl:#f3f4f6;--ib:#f3f4f6;
+    --r:32px;--rs:12px;
 }
-
-html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"], .main {
-    background: var(--bg) !important;
-    font-family: 'Inter', -apple-system, sans-serif !important;
+html,body,[data-testid="stAppViewContainer"],[data-testid="stApp"],.main{
+    background:var(--bg)!important;font-family:'Inter',sans-serif!important;
 }
-.block-container { padding: 0 !important; max-width: 100% !important; }
-h1,h2,h3,h4,h5,h6,p,span,label,div,li,a,button {
-    font-family: 'Inter', -apple-system, sans-serif !important;
-}
+.block-container{padding:0!important;max-width:100%!important;}
 
-/* ═══ Hide ALL Streamlit chrome ═══ */
-header[data-testid="stHeader"] { display: none !important; }
-#MainMenu { display: none !important; }
-footer { display: none !important; }
-[data-testid="stToolbar"] { display: none !important; }
-[data-testid="stDecoration"] { display: none !important; }
-
-/* KILL the "keyboard_double_arrow_left" collapse button text */
-[data-testid="stSidebar"] button[kind="header"],
-[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+/* Hide ALL Streamlit chrome */
+header[data-testid="stHeader"],#MainMenu,footer,[data-testid="stToolbar"],
+[data-testid="stDecoration"]{display:none!important;}
 [data-testid="collapsedControl"],
-button[data-testid="stSidebarCollapse"],
-[data-testid="stSidebarContent"] > div:first-child > button,
-.stSidebar button[kind="headerNoPadding"],
-section[data-testid="stSidebar"] > div > div > div > button {
-    display: none !important;
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]{display:none!important;}
+
+/* ═══ SIDEBAR ═══ */
+[data-testid="stSidebar"]{
+    background:var(--bg2)!important;border-right:1px solid var(--b)!important;
+    width:260px!important;padding:0!important;
 }
-/* Also hide any Material icon text that leaks */
-[data-testid="stSidebar"] span.material-symbols-outlined,
-[data-testid="stSidebar"] .material-icons {
-    display: none !important;
+/* Kill ALL top spacing */
+[data-testid="stSidebar"]>div:first-child{padding-top:0!important;margin-top:0!important;}
+[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]{padding:0!important;margin:0!important;}
+[data-testid="stSidebar"] .stVerticalBlock{gap:2px!important;}
+section[data-testid="stSidebar"]>div{
+    height:100vh!important;overflow-y:auto!important;
+    padding:0 8px 80px!important;
+}
+section[data-testid="stSidebar"]>div>div{padding-top:0!important;margin-top:0!important;}
+
+/* Sidebar icon+button columns — seamless rows */
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"]{
+    gap:0!important;align-items:center!important;margin:0!important;padding:0!important;
+}
+[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] [data-testid="stVerticalBlockBorderWrapper"]{
+    padding:0!important;margin:0!important;
 }
 
-/* ═══ Sidebar ═══ */
-[data-testid="stSidebar"] {
-    background: var(--bg-sidebar) !important;
-    border-right: 1px solid var(--border) !important;
-    width: 260px !important;
-    padding: 0 !important;
+/* Sidebar buttons — left-aligned, compact */
+[data-testid="stSidebar"] [data-testid="stButton"] button{
+    width:100%!important;text-align:left!important;background:transparent!important;
+    border:none!important;border-radius:8px!important;padding:6px 12px!important;
+    font-size:0.84rem!important;color:var(--tm)!important;font-weight:500!important;
+    display:flex!important;justify-content:flex-start!important;align-items:center!important;
+    transition:background .15s!important;min-height:0!important;line-height:1.3!important;
+    margin:0!important;
 }
-[data-testid="stSidebar"] .block-container { padding: 0 !important; }
-[data-testid="stSidebar"] > div:first-child { padding-top: 0 !important; }
-[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
-    padding: 0 !important;
+[data-testid="stSidebar"] [data-testid="stButton"] button p,
+[data-testid="stSidebar"] [data-testid="stButton"] button span{
+    text-align:left!important;
 }
-
-/* Sidebar inner scroll container */
-section[data-testid="stSidebar"] > div {
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100vh !important;
-    overflow: hidden !important;
+[data-testid="stSidebar"] [data-testid="stButton"] button:hover{
+    background:var(--gl)!important;color:var(--g)!important;
 }
-section[data-testid="stSidebar"] > div > div:first-child {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    padding: 12px 12px 0 !important;
+/* New chat — bordered pill */
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]{
+    background:transparent!important;border:1px solid var(--b)!important;
+    color:var(--t)!important;font-weight:600!important;justify-content:flex-start!important;
+    border-radius:20px!important;margin:4px 0!important;padding:8px 14px!important;
 }
-
-/* ═══ Sidebar buttons (Streamlit native) ═══ */
-[data-testid="stSidebar"] [data-testid="stButton"] button {
-    width: 100% !important;
-    text-align: left !important;
-    background: transparent !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 8px 12px !important;
-    font-size: 0.86rem !important;
-    color: var(--text-mid) !important;
-    font-weight: 500 !important;
-    justify-content: flex-start !important;
-    transition: background 0.15s !important;
-}
-[data-testid="stSidebar"] [data-testid="stButton"] button:hover {
-    background: var(--green-light) !important;
-    color: var(--green) !important;
-}
-/* Primary button in sidebar (New chat) */
-[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] {
-    background: transparent !important;
-    border: 1px solid var(--border) !important;
-    color: var(--text) !important;
-    font-weight: 600 !important;
-    justify-content: center !important;
-    border-radius: 20px !important;
-    margin-bottom: 8px !important;
-}
-[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:hover {
-    background: var(--green-light) !important;
-    border-color: var(--green) !important;
-    color: var(--green) !important;
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:hover{
+    background:var(--gl)!important;border-color:var(--g)!important;color:var(--g)!important;
 }
 
-/* Fixed bottom user card */
-.user-card-fixed {
-    position: fixed !important;
-    bottom: 0; left: 0; width: 260px;
-    background: var(--bg-sidebar);
-    border-top: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex; align-items: center; gap: 10px;
-    z-index: 999;
-}
-.user-avatar {
-    width: 34px; height: 34px; border-radius: 50%;
-    background: var(--green-light); color: var(--green);
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
-}
-.user-name { font-size: 0.85rem; font-weight: 600; color: var(--text); line-height: 1.2; }
-.user-plan { font-size: 0.7rem; color: var(--text-light); }
+/* Fixed user card */
+.user-fixed{position:fixed!important;bottom:0;left:0;width:260px;
+    background:var(--bg2);border-top:1px solid var(--b);border-right:1px solid var(--b);
+    padding:10px 14px;display:flex;align-items:center;gap:10px;z-index:999;}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--gl);color:var(--g);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;flex-shrink:0;}
+.user-nm{font-size:.84rem;font-weight:600;color:var(--t);line-height:1.2;}
+.user-pl{font-size:.68rem;color:var(--tl);}
+.nav-sec{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;
+    color:var(--tl);font-weight:600;padding:12px 12px 4px;margin-top:4px;}
 
-/* ═══ Main center area (ChatGPT-style) ═══ */
-.main-center {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    min-height: calc(100vh - 120px);
-    padding: 0 1rem;
-    margin-top: -4rem;
+/* ═══ INPUT ═══ */
+[data-testid="stTextInput"] input{
+    background:var(--ib)!important;border:1px solid var(--b)!important;
+    border-radius:var(--r)!important;padding:14px 20px!important;font-size:.92rem!important;
+    box-shadow:none!important;transition:border-color .2s,box-shadow .2s!important;
 }
-.greeting {
-    font-size: 1.55rem; font-weight: 500; color: var(--text);
-    margin-bottom: 2rem; text-align: center;
+[data-testid="stTextInput"] input:focus{
+    border-color:var(--g)!important;box-shadow:0 0 0 3px rgba(26,122,76,.08)!important;
 }
+[data-testid="stTextInput"]>div{border:none!important;background:transparent!important;}
+[data-testid="stTextInput"] label{display:none!important;}
+[data-testid="stChatInput"]{max-width:700px!important;margin:0 auto!important;}
+[data-testid="stChatInput"] textarea{
+    border-radius:var(--r)!important;border:1px solid var(--b)!important;
+    background:var(--ib)!important;font-size:.9rem!important;
+}
+/* Chips */
+.chip-row [data-testid="stButton"] button{
+    background:transparent!important;border:1px solid var(--b)!important;
+    border-radius:22px!important;color:var(--tm)!important;font-size:.82rem!important;
+    font-weight:500!important;padding:8px 16px!important;white-space:nowrap!important;
+    justify-content:center!important;transition:all .15s!important;
+}
+.chip-row [data-testid="stButton"] button:hover{
+    border-color:var(--g)!important;color:var(--g)!important;background:var(--gl)!important;
+}
+/* Global green */
+[data-testid="stButton"] button[kind="primary"]{
+    background:var(--g)!important;color:#fff!important;border:none!important;
+    border-radius:22px!important;font-weight:600!important;padding:10px 24px!important;
+}
+[data-testid="stButton"] button[kind="primary"]:hover{background:var(--gh)!important;}
+[data-baseweb="slider"] div[role="slider"]{background:var(--g)!important;border-color:var(--g)!important;}
+.stSlider>div>div>div>div{background:var(--g)!important;}
 
-/* ═══ Input bar ═══ */
-[data-testid="stTextInput"] input {
-    background: var(--input-bg) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius) !important;
-    padding: 14px 20px !important;
-    font-size: 0.92rem !important;
-    box-shadow: none !important;
-    transition: border-color 0.2s, box-shadow 0.2s !important;
-}
-[data-testid="stTextInput"] input:focus {
-    border-color: var(--green) !important;
-    box-shadow: 0 0 0 3px rgba(26,122,76,0.08) !important;
-}
-[data-testid="stTextInput"] > div {
-    border: none !important; background: transparent !important;
-}
-[data-testid="stTextInput"] label { display: none !important; }
+/* Top bar */
+.top-bar{display:flex;align-items:center;justify-content:space-between;
+    padding:8px 24px;border-bottom:1px solid var(--bl);}
+.top-bar-l{display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:600;color:var(--t);}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;}
 
-/* Chat input at bottom */
-[data-testid="stChatInput"] {
-    max-width: 700px !important;
-    margin: 0 auto !important;
-}
-[data-testid="stChatInput"] textarea {
-    border-radius: var(--radius) !important;
-    border: 1px solid var(--border) !important;
-    background: var(--input-bg) !important;
-}
+/* Cards */
+.review-out{background:var(--bl);border-left:3px solid var(--g);border-radius:0 var(--rs) var(--rs) 0;
+    padding:1.2rem 1.5rem;font-size:.92rem;line-height:1.75;color:var(--t);margin:1rem 0;}
+.m-row{display:flex;gap:12px;margin:1rem 0;}
+.m-box{flex:1;text-align:center;padding:14px;border-radius:12px;background:var(--gl);}
+.m-val{font-size:1.3rem;font-weight:700;color:var(--g);}
+.m-lbl{font-size:.7rem;color:var(--tm);margin-top:2px;}
+.rec-it{display:flex;align-items:flex-start;gap:12px;padding:14px;border-radius:12px;
+    border:1px solid var(--b);margin-bottom:6px;transition:border-color .15s;}
+.rec-it:hover{border-color:var(--g);}
+.rec-rk{width:32px;height:32px;min-width:32px;border-radius:8px;background:var(--g);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;}
+.sec-hd{display:flex;align-items:center;gap:10px;margin:1.5rem 0 1rem;color:var(--t);}
 
-/* ═══ Mode chips ═══ */
-.action-chips {
-    display: flex; gap: 10px; margin-top: 12px;
-    flex-wrap: wrap; justify-content: center;
-}
-/* Override Streamlit buttons to look like chips */
-.chip-row [data-testid="stButton"] button {
-    background: transparent !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 22px !important;
-    color: var(--text-mid) !important;
-    font-size: 0.84rem !important;
-    font-weight: 500 !important;
-    padding: 9px 18px !important;
-    white-space: nowrap !important;
-    transition: all 0.15s !important;
-}
-.chip-row [data-testid="stButton"] button:hover {
-    border-color: var(--green) !important;
-    color: var(--green) !important;
-    background: var(--green-light) !important;
-}
+/* Chat */
+[data-testid="stChatMessage"]{max-width:700px;margin:0 auto;background:transparent!important;border:none!important;}
+[data-testid="stRadio"]{display:none!important;}
+hr{display:none!important;}
 
-/* ═══ Top bar ═══ */
-.top-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 24px; border-bottom: 1px solid var(--border-light);
-}
-.top-bar-left {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 0.92rem; font-weight: 600; color: var(--text);
-}
-.status-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    display: inline-block; margin-right: 4px;
-}
-
-/* ═══ Content cards ═══ */
-.review-output {
-    background: var(--border-light);
-    border-left: 3px solid var(--green);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    padding: 1.2rem 1.5rem;
-    font-size: 0.92rem; line-height: 1.75; color: var(--text);
-    margin: 1rem 0;
-}
-.metric-row { display: flex; gap: 12px; margin: 1rem 0; }
-.metric-box {
-    flex: 1; text-align: center; padding: 14px;
-    border-radius: 12px; background: var(--green-light);
-}
-.metric-val { font-size: 1.3rem; font-weight: 700; color: var(--green); }
-.metric-lbl { font-size: 0.7rem; color: var(--text-mid); margin-top: 2px; }
-
-.rec-item {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 14px; border-radius: 12px;
-    border: 1px solid var(--border); margin-bottom: 6px;
-    transition: border-color 0.15s;
-}
-.rec-item:hover { border-color: var(--green); }
-.rec-rank {
-    width: 32px; height: 32px; min-width: 32px; border-radius: 8px;
-    background: var(--green); color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.8rem;
-}
-.rec-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
-.rec-cat {
-    display: inline-block; padding: 2px 8px; border-radius: 4px;
-    background: var(--green-badge); color: var(--green);
-    font-size: 0.7rem; font-weight: 600;
-}
-.rec-why { font-size: 0.8rem; color: var(--text-mid); margin-top: 4px; line-height: 1.4; }
-
-/* Section header */
-.section-header {
-    display: flex; align-items: center; gap: 10px;
-    margin: 1.5rem 0 1rem; color: var(--text);
-}
-.section-header svg { color: var(--green); }
-
-/* ═══ GLOBAL button/toggle/slider green overrides ═══ */
-[data-testid="stButton"] button[kind="primary"],
-button[kind="primary"] {
-    background: var(--green) !important; color: white !important;
-    border: none !important; border-radius: 22px !important;
-    font-weight: 600 !important; padding: 10px 24px !important;
-}
-[data-testid="stButton"] button[kind="primary"]:hover,
-button[kind="primary"]:hover {
-    background: var(--green-hover) !important;
-}
-
-/* Toggle switch green */
-[data-testid="stToggle"] [role="checkbox"][aria-checked="true"] {
-    background-color: var(--green) !important;
-}
-[data-testid="stToggle"] span[data-checked="true"] {
-    background-color: var(--green) !important;
-}
-label[data-testid="stWidgetLabel"] + div [role="checkbox"][aria-checked="true"] {
-    background-color: var(--green) !important;
-}
-div[data-baseweb="toggle"] > div:first-child {
-    background-color: var(--green) !important;
-}
-
-/* Slider green */
-[data-testid="stSlider"] [role="slider"] {
-    background-color: var(--green) !important;
-}
-[data-testid="stSlider"] div[data-testid="stTickBar"] > div {
-    background-color: var(--green) !important;
-}
-[data-baseweb="slider"] div[role="slider"] {
-    background-color: var(--green) !important; border-color: var(--green) !important;
-}
-[data-baseweb="slider"] div[data-testid*="Track"] > div:first-child {
-    background-color: var(--green) !important;
-}
-.stSlider > div > div > div > div {
-    background-color: var(--green) !important;
-}
-
-/* ═══ Sidebar section labels ═══ */
-.nav-section {
-    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
-    color: var(--text-light); font-weight: 600;
-    padding: 14px 12px 4px; margin-top: 4px;
-}
-
-/* ═══ Chat messages ═══ */
-[data-testid="stChatMessage"] {
-    max-width: 700px; margin: 0 auto;
-    background: transparent !important; border: none !important;
-}
-
-/* ═══ Radio hide ═══ */
-[data-testid="stRadio"] { display: none !important; }
-/* Selectbox styling */
-[data-testid="stSelectbox"] > div > div {
-    border-radius: 10px !important;
-}
-
-/* Sidebar bottom padding so content doesn't go under fixed user card */
-.sidebar-bottom-spacer { height: 70px; }
-
-/* Preference panel */
-.pref-card {
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); padding: 1.5rem;
-}
-
-hr { display: none !important; }
-
-/* Streamlit toggle internal override */
-[data-testid="stCheckbox"] input:checked + div,
-.st-emotion-cache-1gulkj5,
-.st-emotion-cache-q16mip {
-    background-color: var(--green) !important;
-}
-
-/* Number input */
-[data-testid="stNumberInput"] input {
-    border-radius: 10px !important;
-}
-
-/* Active sidebar button highlight */
-[data-testid="stSidebar"] [data-testid="stButton"] button:active,
-[data-testid="stSidebar"] [data-testid="stButton"] button:focus {
-    background: var(--green-light) !important;
-    color: var(--green) !important;
+/* Responsive */
+@media(max-width:768px){
+    [data-testid="stSidebar"]{width:220px!important;}
+    .user-fixed{width:220px;}
+    [data-testid="stChatInput"]{max-width:100%!important;}
 }
 </style>
 """

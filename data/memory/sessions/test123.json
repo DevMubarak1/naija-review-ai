@@ -1,0 +1,22 @@
+{
+  "session_id": "test123",
+  "messages": [
+    {
+      "role": "user",
+      "content": "recommend me the best phone for Nigeria"
+    },
+    {
+      "role": "assistant",
+      "content": "My guy, I got you. For Nigeria, I'll recommend a phone that's rugged, has a long battery life, and can handle our network conditions. I'll suggest the Samsung Galaxy A12. It's available on Jumia and Konga for around ₦80,000 - ₦100,000.\n\nI chose this phone because it has a large 5000mAh battery, which is perfect for our occasional power outages. It also has a quad-camera setup and a big 6.5-inch screen, which is great for watching Nollywood movies or browsing on the go. Plus, it supports 4G LTE, so you'll get fast internet speeds on MTN, Glo, or 9mobile.\n\nAnother option is the Xiaomi Redmi 9, which is also available on Slot and Jumia for around ₦60,000 - ₦80,000. It has a similar spec sheet to the Samsung Galaxy A12, but with a more affordable price tag.\n\nBoth phones are great options, but if you want my honest opinion, the Samsung Galaxy A12 is the better choice. It's a bit more expensive, but it's a more premium device with better build quality and a more intuitive interface.\n\nWhich one do you think you'll go for, my friend?"
+    },
+    {
+      "role": "user",
+      "content": "recommend me the best phone"
+    },
+    {
+      "role": "assistant",
+      "content": "My friend, I know you're looking for the best phone, and I've got some top recommendations for you. Considering your love for electronics and your Lagos location, I'll suggest the best options available in Nigeria.\n\nFor a high-end phone, I'll recommend the Samsung Galaxy S22 Ultra. It's a beast of a device with a large 6.8-inch Dynamic AMOLED display, a long-lasting 5000mAh battery, and a powerful Exynos 2200 chipset. It's available on Jumia and Slot for around ₦420,000 - ₦500,000.\n\nIf you're looking for something more affordable, I'll suggest the Google Pixel 6. It's a great camera phone with a 6.4-inch OLED display, a snappy Google Tensor chipset, and a clean Android experience. It's available on Konga and Jumia for around ₦250,000 - ₦300,000.\n\nAnother great option is the OnePlus 9 Pro. It's a fast-charging phone with a 6.7-inch AMOLED display, a powerful Qualcomm Snapdragon 888 chipset, and a sleek design. It's available on Slot and Jumia for around ₦280,000 - ₦350,000.\n\nAll of these phones are great options, but if I had to choose one, I'd say go for the Samsung Galaxy S22 Ultra. It's a premium device with a large screen, a long-lasting battery, and a powerful chipset. Plus, it's available on most Nigerian platforms, and you can even get it with a payment plan on Jumia.\n\nWhich one of these phones catches your eye, my friend?"
+    }
+  ],
+  "updated_at": "2026-05-16T10:40:39.898862"
+}
