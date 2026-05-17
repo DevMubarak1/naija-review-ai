@@ -126,24 +126,43 @@ def _evaluate_task_a(df: pd.DataFrame, n_users: int) -> dict:
 
 
 def _evaluate_task_b(df: pd.DataFrame, n_users: int, top_k: int) -> dict:
-    """Evaluate Task B recommendations."""
-    user_counts = df["user_id"].value_counts()
-    eligible = user_counts[user_counts >= 8].index.tolist()[:n_users]
+    """Evaluate Task B recommendations with proper train/test separation."""
+    # Select users with most unique items (not most reviews) for meaningful eval
+    user_item_counts = df.groupby("user_id")["item_name"].nunique()
+    user_review_counts = df["user_id"].value_counts()
+    # Need >= 6 reviews AND >= 3 unique items for meaningful eval
+    eligible_users = user_item_counts[
+        (user_item_counts >= 3) & (user_review_counts[user_item_counts.index] >= 6)
+    ].sort_values(ascending=False).index.tolist()
 
     rec_results = []
     gt_items = []
+    evaluated = 0
 
-    for uid in eligible:
+    for uid in eligible_users:
+        if evaluated >= n_users:
+            break
+
         user_df = df[df["user_id"] == uid]
         # Split: history = first 60%, test = last 40%
         split = int(len(user_df) * 0.6)
         history = user_df.iloc[:split].to_dict("records")
         test = user_df.iloc[split:]
 
-        # Ground truth: items the user rated >= 4
-        relevant = test[test["rating"] >= 4]["item_name"].tolist()
+        # Items already seen in history
+        history_items = set(r.get("item_name", "").lower().strip() for r in history)
+
+        # Ground truth: ONLY genuinely new items rated >= 4 (not in history)
+        test_liked = test[test["rating"] >= 4]["item_name"].tolist()
+        relevant = list(dict.fromkeys(  # Deduplicate
+            item for item in test_liked
+            if item.lower().strip() not in history_items
+        ))
+
         if not relevant:
-            continue
+            continue  # Skip users with no new items in test
+
+        evaluated += 1
 
         try:
             result = recommendation_pipeline.recommend(
@@ -156,7 +175,7 @@ def _evaluate_task_b(df: pd.DataFrame, n_users: int, top_k: int) -> dict:
             gt_items.append(relevant)
 
             recs = [r["item_name"] for r in result.get("recommendations", [])]
-            logger.info(f"  User {uid[:8]}: {len(recs)} recs, {len(relevant)} relevant")
+            logger.info(f"  User {uid[:8]}: {len(recs)} recs, {len(relevant)} new relevant items")
         except Exception as e:
             logger.warning(f"  User {uid[:8]} failed: {e}")
 

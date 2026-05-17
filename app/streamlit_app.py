@@ -1,27 +1,54 @@
-"""NaijaReview AI — Dashboard (all 4 fixes: active mode, alignment, single avatar, recent chats)"""
-import uuid, requests, streamlit as st
-from app.styles import (CSS, LOGO, LOGO_SM, AV_USER, AV_AI, STOP_IC, IC, nav_html)
+"""NaijaReview AI — Dashboard (persistent chats, delete, spacing fixed)"""
+import json, os, uuid, requests, streamlit as st
+from app.styles import CSS, LOGO, LOGO_SM, AV_USER, AV_AI, STOP_IC, IC, nav_html
 
 st.set_page_config(page_title="NaijaReview AI", page_icon="🇳🇬", layout="wide",
                    initial_sidebar_state="expanded")
 st.markdown(CSS, unsafe_allow_html=True)
+
 API = "http://localhost:8000"
+HIST_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "chat_history.json")
+
+# ── Persist helpers ──
+def _load_history():
+    try:
+        if os.path.exists(HIST_FILE):
+            with open(HIST_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return []
+
+def _save_history():
+    try:
+        os.makedirs(os.path.dirname(HIST_FILE), exist_ok=True)
+        with open(HIST_FILE, "w", encoding="utf-8") as f:
+            json.dump(st.session_state.history, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
 
 # ── Session defaults ──
-_d = {
-    "mode": "home", "msgs": [], "sid": str(uuid.uuid4()),
-    "result": None, "search_open": False, "more_open": False,
-    "history": [
+if "mode" not in st.session_state:
+    st.session_state.mode = "home"
+if "msgs" not in st.session_state:
+    st.session_state.msgs = []
+if "sid" not in st.session_state:
+    st.session_state.sid = str(uuid.uuid4())
+if "result" not in st.session_state:
+    st.session_state.result = None
+if "search_open" not in st.session_state:
+    st.session_state.search_open = False
+if "more_open" not in st.session_state:
+    st.session_state.more_open = False
+if "history" not in st.session_state:
+    st.session_state.history = _load_history() or [
         {"title": "Samsung Galaxy Buds review", "mode": "review", "msgs": []},
         {"title": "Restaurant recommendations Lagos", "mode": "recommend", "msgs": []},
         {"title": "Book ratings analysis", "mode": "chat", "msgs": []},
-    ],
-    "prefs": {"nigerian_mode": True, "region": "Lagos",
-              "default_category": "Electronics", "top_k": 8},
-}
-for k, v in _d.items():
-    if k not in st.session_state:
-        st.session_state[k] = v
+    ]
+if "prefs" not in st.session_state:
+    st.session_state.prefs = {"nigerian_mode": True, "region": "Lagos",
+                               "default_category": "Electronics", "top_k": 8}
 
 
 def api_ok():
@@ -32,7 +59,6 @@ def api_ok():
 
 
 def smart_chat(msg, sid):
-    """Send to conversational chat API."""
     try:
         r = requests.post(f"{API}/task-b/chat", json={
             "user_id": "demo_user_001", "message": msg,
@@ -49,7 +75,7 @@ def smart_chat(msg, sid):
 
 
 def nav_btn(icon_key, label, key, mode_check=None):
-    """Render aligned nav item: HTML label (with active highlight) + invisible overlay button."""
+    """HTML label + invisible overlay button."""
     active = (mode_check is not None and st.session_state.mode == mode_check)
     st.markdown(nav_html(icon_key, label, active=active), unsafe_allow_html=True)
     return st.button(label, key=key, use_container_width=True)
@@ -59,12 +85,12 @@ def nav_btn(icon_key, label, key, mode_check=None):
 # SIDEBAR
 # ══════════════════════════════════════════
 with st.sidebar:
-    # Logo — flush top
-    st.markdown(f'<div style="display:flex;align-items:center;gap:9px;padding:8px 12px 8px;">'
-                f'{LOGO}<span style="font-size:.93rem;font-weight:700;color:#111827;">'
-                f'NaijaReview AI</span></div>', unsafe_allow_html=True)
+    # Logo — fixed at top via sticky CSS
+    st.markdown(f'''<div class="sidebar-logo-fixed">
+        {LOGO}<span style="font-size:.93rem;font-weight:700;color:#111827;">NaijaReview AI</span>
+    </div>''', unsafe_allow_html=True)
 
-    # New Chat (visible primary button)
+    # New Chat
     if st.button("New chat", key="new_chat", type="primary", use_container_width=True):
         st.session_state.mode = "home"
         st.session_state.result = None
@@ -79,22 +105,33 @@ with st.sidebar:
         sq = st.text_input("s", placeholder="Search history...",
                            label_visibility="collapsed", key="sq")
         if sq:
-            for h in st.session_state.history:
-                if sq.lower() in h["title"].lower():
-                    st.caption(h["title"])
+            matches = [h for h in st.session_state.history if sq.lower() in h["title"].lower()]
+            for j, h in enumerate(matches[:5]):
+                st.markdown(nav_html("chat", h["title"][:28]), unsafe_allow_html=True)
+                if st.button(h["title"][:28], key=f"sr_{j}", use_container_width=True):
+                    st.session_state.mode = h.get("mode", "chat")
+                    st.session_state.msgs = h.get("msgs", [])
+                    st.session_state.search_open = False
+                    st.rerun()
+            if not matches:
+                st.caption("No results found.")
 
     # More
     if nav_btn("more", "More", "more_btn"):
         st.session_state.more_open = not st.session_state.more_open
     if st.session_state.more_open:
         if nav_btn("trash", "Clear all chats", "clear_all"):
-            st.session_state.history = []; st.session_state.msgs = []
-            st.session_state.more_open = False; st.rerun()
+            st.session_state.history = []
+            st.session_state.msgs = []
+            st.session_state.more_open = False
+            _save_history()
+            st.rerun()
         if nav_btn("info", "System info", "sys_btn", "system_info"):
             st.session_state.mode = "system_info"
-            st.session_state.more_open = False; st.rerun()
+            st.session_state.more_open = False
+            st.rerun()
 
-    # ── Modes (with active highlight) ──
+    # ── Modes ──
     st.markdown('<div class="nav-sec">Modes</div>', unsafe_allow_html=True)
     if nav_btn("edit", "Generate Review", "nav_rev", "review"):
         st.session_state.mode = "review"; st.session_state.result = None; st.rerun()
@@ -110,15 +147,25 @@ with st.sidebar:
     if nav_btn("clock", "History", "nav_hist", "history_view"):
         st.session_state.mode = "history_view"; st.rerun()
 
-    # ── Recents ──
+    # ── Recents (with delete) ──
     st.markdown('<div class="nav-sec">Recents</div>', unsafe_allow_html=True)
     for i, h in enumerate(st.session_state.history[:5]):
-        if nav_btn("chat", h["title"][:28], f"rc_{i}"):
-            # Load the stored messages from this history entry
-            st.session_state.mode = h.get("mode", "chat")
-            st.session_state.msgs = h.get("msgs", [])
-            st.session_state.result = None
-            st.rerun()
+        # Row: icon + title + delete
+        col_title, col_del = st.columns([0.85, 0.15])
+        with col_title:
+            st.markdown(nav_html("chat", h["title"][:26]), unsafe_allow_html=True)
+            if st.button(h["title"][:26], key=f"rc_{i}", use_container_width=True):
+                st.session_state.mode = h.get("mode", "chat")
+                st.session_state.msgs = h.get("msgs", [])
+                st.session_state.result = None
+                st.rerun()
+        with col_del:
+            st.markdown(f'<div class="del-btn" style="margin-top:4px;">{IC["x"]}</div>',
+                        unsafe_allow_html=True)
+            if st.button("x", key=f"del_{i}", use_container_width=True):
+                st.session_state.history.pop(i)
+                _save_history()
+                st.rerun()
 
     # Bottom spacer + fixed user card
     st.markdown('<div style="height:70px;"></div>', unsafe_allow_html=True)
@@ -152,16 +199,17 @@ if st.session_state.mode == "home":
     with cc:
         query = st.text_input("Ask", placeholder="Ask anything about reviews, recommendations...",
                               label_visibility="collapsed", key="home_q")
-        st.markdown('<div class="chip-row">', unsafe_allow_html=True)
+        # Chip buttons — wrapped in styled container
+        st.markdown('<div class="home-chips-area">', unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
         with c1:
-            if st.button("Generate Review", key="c_rev"):
+            if st.button("Generate Review", key="c_rev", use_container_width=True):
                 st.session_state.mode = "review"; st.rerun()
         with c2:
-            if st.button("Get Recommendations", key="c_rec"):
+            if st.button("Get Recommendations", key="c_rec", use_container_width=True):
                 st.session_state.mode = "recommend"; st.rerun()
         with c3:
-            if st.button("Chat with AI", key="c_chat"):
+            if st.button("Chat with AI", key="c_chat", use_container_width=True):
                 st.session_state.mode = "chat"; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         if query:
@@ -173,17 +221,15 @@ if st.session_state.mode == "home":
                 "title": query[:30], "mode": "chat",
                 "msgs": list(st.session_state.msgs)
             })
+            _save_history()
             st.rerun()
 
 
 # ════════ REVIEW ════════
 elif st.session_state.mode == "review":
-    # Mode indicator pill
     st.markdown(f'<div class="mode-pill">{IC["edit"]} Generate Review</div>', unsafe_allow_html=True)
     _p1, cm, _p2 = st.columns([1, 3, 1])
     with cm:
-        st.markdown(f'<div class="sec-hd">{IC["edit"]} <span style="font-size:1.1rem;font-weight:600;">'
-                    f'Generate Review & Rating</span></div>', unsafe_allow_html=True)
         p = st.session_state.prefs
         uid = st.text_input("User ID", "demo_user_001", key="a_uid")
         c1, c2 = st.columns(2)
@@ -210,6 +256,7 @@ elif st.session_state.mode == "review":
                     if r.ok:
                         st.session_state.result = r.json()
                         st.session_state.history.insert(0, {"title": f"{item} review", "mode": "review", "msgs": []})
+                        _save_history()
                     else:
                         st.error(r.text[:200])
                 except Exception as e:
@@ -230,8 +277,6 @@ elif st.session_state.mode == "recommend":
     st.markdown(f'<div class="mode-pill">{IC["star"]} Get Recommendations</div>', unsafe_allow_html=True)
     _p1, cm, _p2 = st.columns([1, 3, 1])
     with cm:
-        st.markdown(f'<div class="sec-hd">{IC["star"]} <span style="font-size:1.1rem;font-weight:600;">'
-                    f'Get Recommendations</span></div>', unsafe_allow_html=True)
         p = st.session_state.prefs
         uid = st.text_input("User ID", "demo_user_001", key="b_uid")
         q = st.text_input("What are you looking for?", placeholder="e.g. Good earbuds for Lagos traffic", key="b_q")
@@ -246,13 +291,12 @@ elif st.session_state.mode == "recommend":
                     r = requests.post(f"{API}/task-b/recommend", json={
                         "user_id": uid, "query": q, "top_k": k,
                         "is_nigerian": p["nigerian_mode"], "category_filter": cat_f,
-                        "user_reviews": [
-                            {"rating": 5, "review_text": "Love this!", "item_name": "JBL Speaker", "category": "Electronics"},
-                        ]
+                        "user_reviews": [{"rating": 5, "review_text": "Love this!", "item_name": "JBL Speaker", "category": "Electronics"}]
                     }, timeout=120)
                     if r.ok:
                         st.session_state.result = r.json()
                         st.session_state.history.insert(0, {"title": f"Recs: {q[:25]}" if q else "Recs", "mode": "recommend", "msgs": []})
+                        _save_history()
                     else:
                         st.error(r.text[:200])
                 except Exception as e:
@@ -271,10 +315,8 @@ elif st.session_state.mode == "recommend":
 
 # ════════ CHAT ════════
 elif st.session_state.mode == "chat":
-    # Mode pill at top
     st.markdown(f'<div class="mode-pill">{IC["chat"]} Chat with AI</div>', unsafe_allow_html=True)
 
-    # Render messages — SINGLE custom SVG avatar only (Streamlit default hidden via CSS)
     for m in st.session_state.msgs:
         av = AV_AI if m["role"] == "assistant" else AV_USER
         with st.chat_message(m["role"]):
@@ -292,7 +334,6 @@ elif st.session_state.mode == "chat":
                         unsafe_allow_html=True)
         with st.chat_message("assistant"):
             ph = st.empty()
-            # Show stop icon while AI is thinking
             ph.markdown(f'<div style="display:flex;gap:12px;align-items:center;">'
                         f'<div style="flex-shrink:0;">{AV_AI}</div>'
                         f'<div style="color:#9ca3af;display:flex;align-items:center;gap:6px;">'
@@ -303,19 +344,19 @@ elif st.session_state.mode == "chat":
                         f'<div style="font-size:.9rem;line-height:1.7;color:#111827;">{resp}</div></div>',
                         unsafe_allow_html=True)
             st.session_state.msgs.append({"role": "assistant", "content": resp})
-            # Save conversation to history
+            # Save to history + persist to disk
             st.session_state.history.insert(0, {
                 "title": prompt[:30], "mode": "chat",
                 "msgs": list(st.session_state.msgs)
             })
+            _save_history()
 
 
 # ════════ PREFERENCES ════════
 elif st.session_state.mode == "preferences":
     _p1, cm, _p2 = st.columns([1, 3, 1])
     with cm:
-        st.markdown(f'<div class="sec-hd">{IC["gear"]} <span style="font-size:1.1rem;font-weight:600;">'
-                    f'Preferences</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="sec-hd">{IC["gear"]} <span style="font-size:1.1rem;font-weight:600;">Preferences</span></div>', unsafe_allow_html=True)
         p = st.session_state.prefs
         ng = st.toggle("Nigerian Mode", p["nigerian_mode"], key="pf_ng")
         region = st.selectbox("Default Region", ["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan", "Enugu"],
@@ -333,8 +374,7 @@ elif st.session_state.mode == "preferences":
 elif st.session_state.mode == "history_view":
     _p1, cm, _p2 = st.columns([1, 3, 1])
     with cm:
-        st.markdown(f'<div class="sec-hd">{IC["clock"]} <span style="font-size:1.1rem;font-weight:600;">'
-                    f'Chat History</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="sec-hd">{IC["clock"]} <span style="font-size:1.1rem;font-weight:600;">Chat History</span></div>', unsafe_allow_html=True)
         if not st.session_state.history:
             st.info("No history yet.")
         else:
@@ -348,15 +388,16 @@ elif st.session_state.mode == "history_view":
                         st.rerun()
                 with c2:
                     if st.button("Del", key=f"d_{i}"):
-                        st.session_state.history.pop(i); st.rerun()
+                        st.session_state.history.pop(i)
+                        _save_history()
+                        st.rerun()
 
 
 # ════════ SYSTEM INFO ════════
 elif st.session_state.mode == "system_info":
     _p1, cm, _p2 = st.columns([1, 3, 1])
     with cm:
-        st.markdown(f'<div class="sec-hd">{IC["info"]} <span style="font-size:1.1rem;font-weight:600;">'
-                    f'System Information</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="sec-hd">{IC["info"]} <span style="font-size:1.1rem;font-weight:600;">System Information</span></div>', unsafe_allow_html=True)
         if online:
             try:
                 st.json(requests.get(f"{API}/health", timeout=3).json())

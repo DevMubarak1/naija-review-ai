@@ -20,6 +20,9 @@ env/
 data/raw/
 data/chroma_db/
 data/processed/
+data/memory/profiles/
+data/memory/sessions/
+data/chat_history.json
 *.csv
 *.json.gz
 *.tar.gz

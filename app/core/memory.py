@@ -31,7 +31,7 @@ class UserProfile:
         self.region: str = self.data.get("region", "")
 
     def to_dict(self) -> dict:
-        return {
+        result = {
             "user_id": self.user_id,
             "name": self.name,
             "review_history": self.review_history,
@@ -43,6 +43,11 @@ class UserProfile:
             "is_nigerian": self.is_nigerian,
             "region": self.region,
         }
+        # Preserve all extra data (style_fingerprint, etc.)
+        for key in self.data:
+            if key not in result:
+                result[key] = self.data[key]
+        return result
 
     def get_summary(self) -> str:
         """Generate a natural language summary of this user for LLM context."""

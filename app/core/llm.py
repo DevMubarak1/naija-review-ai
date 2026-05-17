@@ -24,6 +24,7 @@ class LLMClient:
         self.groq_client = Groq(api_key=settings.groq_api_key)
         self.openai_client = OpenAI(api_key=settings.openai_api_key)
         self._call_count = 0
+        self._groq_failures = 0  # Circuit breaker: skip Groq after 3 consecutive failures
 
     def generate(
         self,
@@ -57,15 +58,19 @@ class LLMClient:
             {"role": "user", "content": prompt},
         ]
 
-        # Try Groq first (unless forced to OpenAI)
-        if not force_openai:
+        # Try Groq first (circuit breaker: 1 failure → switch to OpenAI)
+        # Groq's 100K daily token limit means once it fails, it won't recover
+        if not force_openai and self._groq_failures < 1:
             try:
-                return self._call_groq(
+                result = self._call_groq(
                     messages, temperature, max_tokens, use_fast_model, json_mode
                 )
+                self._groq_failures = 0  # Reset on success
+                return result
             except Exception as e:
-                logger.warning(f"Groq failed (call #{self._call_count}): {e}")
-                logger.info("Falling back to OpenAI...")
+                self._groq_failures += 1
+                logger.warning(f"Groq failed (call #{self._call_count}, failures={self._groq_failures}): {e}")
+                logger.info("Groq circuit breaker OPEN — using OpenAI for remaining calls")
 
         # Fallback to OpenAI
         try:
