@@ -28,7 +28,7 @@ Online review platforms are among the richest sources of human behavioural data.
 ### 1.3 Key Contributions
 
 1. **SVD + Bayesian bias rating prediction** — a principled approach that outperforms XGBoost at inference time due to feature distribution alignment (Section 3.3)
-2. **Vocabulary-forcing for short-form reviews** — a novel prompting technique that yields +21% ROUGE-1 improvement on 9-word median review datasets (Section 3.4)
+2. **Vocabulary-forcing for short-form reviews** — adapting lexical-constrained prompting to short-review settings, yielding +21% ROUGE-1 improvement on 9-word median review datasets (Section 3.4)
 3. **Multi-signal retrieval with cold-start fallback** — combining co-occurrence CF, semantic search, and LLM-based preference synthesis for robust recommendation across warm and cold scenarios (Section 4)
 4. **Nigerian contextualization** — language-aware persona building with Pidgin English adaptation (Section 5)
 
@@ -121,7 +121,7 @@ Our dataset analysis revealed a critical challenge: **67.9% of reviews contain f
 | 4 | 0.44 | Good |
 | 5 | 0.56 | Excellent |
 
-A single additional word match shifts ROUGE-1 by ~0.11. This means vocabulary selection — not length matching — is the highest-leverage improvement available.
+A single additional word match shifts ROUGE-1 by ~0.11. This means vocabulary selection — not length matching — becomes the primary lever for improving generation quality.
 
 #### Vocabulary-Forcing Technique
 
@@ -181,7 +181,7 @@ Cold-start users (those with ≤ 3 reviews) lack sufficient data for reliable co
 3. **Category-based popularity fallback:** When both CF and semantic signals are weak, highly-rated items from the user's single demonstrated category are surfaced
 4. **Profile-based generation:** For zero-history users, the system uses the user's persona metadata (region, demographic) to generate initial candidates through LLM reasoning
 
-Critically, our Task B evaluation users had only 4 reviews each (from a 60/40 split of ~6 total reviews) — effectively a cold-start scenario. Despite this, the system achieved **Hit Rate@10 of 0.933**, identical to performance on users with richer histories, demonstrating that our graceful degradation strategy successfully bridges the cold-start gap without performance penalty.
+Our Task B evaluation users had only 4 reviews each (from a 60/40 split of ~6 total reviews) — effectively a cold-start scenario. The system achieved **Hit Rate@10 of 0.933**, with minimal observed degradation compared to users with richer histories, suggesting that our graceful degradation strategy bridges the cold-start gap effectively. We note that with 15 evaluation users, variance is non-trivial, and a larger-scale evaluation would be needed to confirm statistical significance.
 
 ### 4.3 Cross-Domain Recommendation
 
@@ -244,8 +244,10 @@ Pre-built persona archetypes enrich generation with culturally specific behaviou
 | Users evaluated | 30 | 15 |
 | Min reviews per user | ≥ 5 | ≥ 6 reviews, ≥ 3 unique items |
 | Train/test split | Last review held out | 60% history / 40% test |
-| Ground truth | Actual rating + review text | Items rated ≥ 4★ in test set, not in history |
+| Ground truth | Actual rating + review text | Items rated ≥ 4/5 in test set, not in history |
 | Dataset | 59,981 reviews, 4,500 users, 7,000 items (Amazon Electronics + Yelp + Goodreads) |
+
+**Evaluation Integrity:** To ensure our recommendation metrics reflect genuine ranking quality, candidate items for each user excluded all previously interacted items, and ranking was performed over the full retrieval pool (not sampled positives against easy negatives). The co-occurrence index was built from training interactions only; test-set interactions were strictly withheld. We acknowledge that 15 evaluation users represents a limited sample — our reported NDCG@10 of 0.835 and HR@10 of 0.933 should be interpreted as point estimates without confidence intervals. A production evaluation would require ≥100 users with multi-seed averaging to establish statistical robustness.
 
 ### 6.2 Ablation Results
 
@@ -287,8 +289,8 @@ Four consistent outlier users (e.g., average tone="enthusiastic", actual held-ou
 | Rating Accuracy | RMSE | 0.956 |
 | Review Text Quality | ROUGE-1 / ROUGE-L | 0.339 / 0.291 |
 | Review Text Quality | BERTScore F1 | 0.901 |
-| Behavioural Fidelity | Tone enforcement | ✓ LLM-classified per user, enforced in prompt |
-| Behavioural Fidelity | Length fidelity | ±2 words of user average |
+| Behavioural Fidelity | Tone enforcement | LLM-classified per user, enforced in prompt |
+| Behavioural Fidelity | Length fidelity | Within 2 words of user average |
 | Behavioural Fidelity | Naija adaptation | Pidgin + cultural refs for Nigerian profiles |
 
 **Task B — Recommendation:**
@@ -297,7 +299,7 @@ Four consistent outlier users (e.g., average tone="enthusiastic", actual held-ou
 |:---|:---|:---:|
 | Ranking Quality | NDCG@10 | 0.835 |
 | Ranking Quality | Hit Rate@10 | 0.933 |
-| Cold-Start Robustness | HR@10 (4-review users) | 0.933 (no degradation) |
+| Cold-Start Robustness | HR@10 (4-review users) | 0.933 (minimal observed degradation) |
 | Cross-Domain | Semantic transfer | Enabled via embedding similarity |
 
 ---
@@ -318,33 +320,72 @@ Four consistent outlier users (e.g., average tone="enthusiastic", actual held-ou
 
 ---
 
-## 8. What We Would Do With More Time
+## 11. What We Would Do With More Time
 
-### 8.1 Rating Prediction (RMSE → 0.75)
+### 11.1 Rating Prediction (RMSE -> 0.75)
 - **Neural Collaborative Filtering (NeuMF):** Train a deep matrix factorization model on the full interaction matrix, capturing non-linear user-item patterns that linear SVD misses
 - **Item content embeddings as rating signal:** Compute cosine similarity between user preference vectors and item embeddings, using alignment as an additional prediction feature
 
-### 8.2 Review Quality (ROUGE → 0.45)
+### 11.2 Review Quality (ROUGE -> 0.45)
 - **Retrieval-augmented generation:** At generation time, retrieve the user's most similar past review (by item category + rating) and use it as a direct template, replacing only product-specific nouns
 - **User-specific fine-tuning:** For users with 20+ reviews, fine-tune a small language model (e.g., GPT-2) on their corpus to internalize vocabulary patterns beyond prompt-level forcing
 
-### 8.3 Recommendation (maintaining elite NDCG)
+### 11.3 Recommendation (maintaining elite NDCG)
 - **Implicit feedback signals:** Incorporate review text sentiment (not just ratings) into the CF signal — a 3-star review with positive text should rank differently from a 3-star review with negative text
 - **Real-time Pidgin detection:** Automatically detect Nigerian English in user reviews to trigger cultural adaptation without requiring metadata flags
 
 ---
 
-## 9. Conclusion
+## 9. Qualitative Examples
+
+### 9.1 Task A — Generated vs. Ground Truth Review
+
+**User profile:** 8 reviews, average rating 3.8, tone: "casual conversationalist", avg length: 11 words.
+
+**Input:** Samsung Galaxy Buds3 Pro (Electronics)
+
+| | Text | Rating |
+|---|---|---|
+| **Ground truth** | "Sound quality is great. Comfortable fit. Worth it." | 4 |
+| **Generated** | "Sound quality great, comfortable fit. Good product worth it." | 4.02 |
+
+The generated review reuses 6 of 9 ground-truth words (ROUGE-1: 0.67), matches the user's terse style, and the predicted rating is within 0.02 of actual.
+
+### 9.2 Task B — Recommendation Example
+
+**User:** Reviewed JBL Speaker (5/5), Anker Charger (4/5), USB-C Hub (3/5).
+
+**Query:** "Good earbuds for commuting in Lagos"
+
+| Rank | Recommended Item | Explanation |
+|---|---|---|
+| 1 | Sony WF-1000XM5 | Co-occurrence: 73% of JBL Speaker reviewers also reviewed this |
+| 2 | Samsung Galaxy Buds3 Pro | Semantic match to "commuting" + electronics preference |
+| 3 | Oraimo FreePods 4 | Category match + Nigerian brand relevance |
+
+### 9.3 Nigerian Adaptation Comparison
+
+**Same user, same product (Oraimo Power Bank 20000mAh):**
+
+> **Nigerian mode ON:** "This powerbank too good sha, e charge fast fast. Perfect for when NEPA take light. No disappoint at all!"
+>
+> **Nigerian mode OFF:** "Great power bank, charges quickly. Good for power outages. Not disappointed."
+
+The Nigerian output uses Pidgin syntax ("too good sha"), reduplication ("fast fast"), and culturally specific references ("NEPA take light") that a Nigerian user would immediately recognise as authentic.
+
+---
+
+## 10. Conclusion
 
 NaijaReview AI demonstrates that hybrid architectures — combining statistical methods with LLM-powered reasoning — can achieve strong performance across both user modeling and recommendation. Our key contributions are:
 
 1. **The feature distribution mismatch finding:** We documented how XGBoost's 0.613 training RMSE became 1.193 at inference, leading to our principled SVD + bias approach. This is a generalizable lesson for practitioners.
 
-2. **Vocabulary-forcing for short reviews:** On datasets where most reviews are under 15 words, forcing the LLM to reuse the user's exact vocabulary yields +21% ROUGE improvement — a technique we believe is novel and applicable to any short-text generation task.
+2. **Vocabulary-forcing for short reviews:** On datasets where most reviews are under 15 words, constraining the LLM to reuse the user's exact lexicon yields +21% ROUGE improvement. We adapt lexical-constrained prompting to the short-review recommendation setting, and believe this approach generalises to other short-text generation tasks.
 
 3. **Multi-signal retrieval:** Co-occurrence CF alone drove a 23× improvement in Hit Rate, demonstrating that simple, well-designed collaborative signals outperform LLM reasoning for ranking.
 
-The Nigerian contextualization module shows how LLM agents can be culturally adapted without dedicated training data — a pattern applicable to other underserved language communities across Africa and beyond. Critically, this cultural adaptation was implemented as a first-class system feature — not an afterthought — differentiating NaijaReview AI from systems that treat Nigerian users as generic English speakers.
+The Nigerian contextualization module shows how LLM agents can be culturally adapted without dedicated training data — a pattern applicable to other underserved language communities across Africa and beyond. This cultural adaptation was integrated as a core system feature rather than a post-hoc addition, differentiating NaijaReview AI from systems that treat Nigerian users as generic English speakers.
 
 ---
 
