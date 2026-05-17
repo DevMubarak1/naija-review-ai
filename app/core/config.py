@@ -1,6 +1,7 @@
 """
 NaijaReview AI — Configuration Module
 Loads environment variables and provides centralized settings.
+Supports both .env file and Streamlit Cloud secrets.
 """
 
 import os
@@ -12,13 +13,29 @@ from pydantic import BaseModel
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
+# Try to read from Streamlit secrets (for Cloud deployment)
+def _get_secret(key: str, default: str = "") -> str:
+    """Read from Streamlit secrets first, then env vars."""
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets"):
+            # Try nested [api_keys] section first
+            if "api_keys" in st.secrets and key in st.secrets["api_keys"]:
+                return st.secrets["api_keys"][key]
+            # Try top-level
+            if key in st.secrets:
+                return st.secrets[key]
+    except Exception:
+        pass
+    return os.getenv(key, default)
+
 
 class Settings(BaseModel):
     """Application settings loaded from environment."""
 
     # API Keys
-    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    groq_api_key: str = _get_secret("GROQ_API_KEY")
+    openai_api_key: str = _get_secret("OPENAI_API_KEY")
 
     # Model names
     groq_model: str = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
