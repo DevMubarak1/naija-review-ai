@@ -1,6 +1,5 @@
 """
-NaijaReview AI — Embedding Engine
-Provides semantic embeddings using sentence-transformers (runs locally on GPU).
+Semantic embedding engine using sentence-transformers for local inference.
 """
 
 from typing import Union
@@ -12,10 +11,7 @@ from app.core.config import settings
 
 
 class EmbeddingEngine:
-    """
-    Local embedding engine using sentence-transformers.
-    Runs on GPU (GTX 1650) for fast inference.
-    """
+    """Local embedding engine using sentence-transformers."""
 
     def __init__(self, model_name: str = None):
         self.model_name = model_name or settings.embedding_model
@@ -24,7 +20,7 @@ class EmbeddingEngine:
 
         # Try to use GPU
         if self.model.device.type == "cuda":
-            logger.info("Embedding model running on GPU ✓")
+            logger.info("Embedding model running on GPU")
         else:
             logger.info("Embedding model running on CPU")
 

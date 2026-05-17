@@ -1,5 +1,5 @@
 """
-NaijaReview AI — Rating Predictor (Optimized Hybrid)
+Hybrid rating predictor combining SVD collaborative filtering with
 Combines collaborative filtering, XGBoost with richer features, and LLM reasoning.
 Optimized for lower RMSE (target: ≤0.75).
 """
@@ -383,16 +383,16 @@ class RatingPredictor:
         reviews_context = ""
         if category_reviews:
             reviews_context = f"\nUser's {item_category} reviews: " + ", ".join(
-                f'{r.get("item_name","?")} ({r.get("rating","?")}★)' for r in category_reviews[:3]
+                f'{r.get("item_name","?")} ({r.get("rating","?")}/5)' for r in category_reviews[:3]
             )
         elif sample_reviews:
             reviews_context = f"\nUser's recent reviews: " + ", ".join(
-                f'{r.get("item_name","?")} ({r.get("rating","?")}★)' for r in sample_reviews[:3]
+                f'{r.get("item_name","?")} ({r.get("rating","?")}/5)' for r in sample_reviews[:3]
             )
 
         prompt = f"""USER: {user_profile.get_summary()}{reviews_context}
 PRODUCT: {item_name} ({item_category}). {item_description or ''}
-BASELINE PREDICTION: {baseline:.2f}★
+BASELINE PREDICTION: {baseline:.2f}/5
 
 Based on how well this product matches this user's preferences, should the rating be adjusted?
 Consider: Does the user typically rate {item_category} items higher or lower? Does this specific product match their taste profile?

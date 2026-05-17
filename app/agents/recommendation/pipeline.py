@@ -1,5 +1,5 @@
 """
-NaijaReview AI — Recommendation Pipeline (Optimized for NDCG/HitRate)
+Recommendation pipeline with multi-signal retrieval and LLM re-ranking,
 Multi-signal retrieval + improved re-ranking for better recommendation quality.
 """
 
@@ -172,7 +172,7 @@ class RecommendationPipeline:
 {profile.get_summary()}
 
 Sample reviews:
-{chr(10).join(f"- [{r.get('rating', '?')}★] {r.get('review_text', '')[:100]}" for r in profile.get_sample_reviews(3))}
+{chr(10).join(f"- [{r.get('rating', '?')}/5] {r.get('review_text', '')[:100]}" for r in profile.get_sample_reviews(3))}
 
 {"Additional context from user query: " + query if query else ""}
 
@@ -423,8 +423,8 @@ Respond in JSON: {{"items": [{{"item_name": "...", "category": "...", "reason": 
         if user_reviews:
             liked = [r for r in user_reviews if r.get("rating", 0) >= 4][:5]
             if liked:
-                liked_context = "\nITEMS USER LOVED (rated 4-5★):\n" + "\n".join(
-                    f"- {r.get('item_name', '?')} ({r.get('category', '?')}, {r.get('rating', '?')}★)"
+                liked_context = "\nITEMS USER LOVED (rated 4-5/5):\n" + "\n".join(
+                    f"- {r.get('item_name', '?')} ({r.get('category', '?')}, {r.get('rating', '?')}/5)"
                     for r in liked
                 )
 

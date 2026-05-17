@@ -1,4 +1,4 @@
-# 🇳🇬 NaijaReview AI
+# NaijaReview AI
 
 **LLM Agent for User Modeling & Personalized Recommendation**
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 🏆 Overview
+## Overview
 
 NaijaReview AI is an agentic AI system that deeply understands users as dynamic, context-sensitive individuals and generates culturally-aware reviews and hyper-personalized recommendations. The system is contextualized for Nigerian users, incorporating Nigerian English (Pidgin), cultural references, and local preferences.
 
@@ -18,7 +18,7 @@ NaijaReview AI is an agentic AI system that deeply understands users as dynamic,
 - **Multi-turn Conversation**: Interactive chat interface for discovering recommendations
 - **Cold-Start Handling**: Works even for new users with minimal history
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -40,7 +40,7 @@ NaijaReview AI is an agentic AI system that deeply understands users as dynamic,
 └─────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Option 1: Docker (Recommended)
 
@@ -93,7 +93,7 @@ curl -X POST http://localhost:8000/train
 # Or use the Streamlit sidebar "Train All Models" button
 ```
 
-## 📡 API Endpoints
+## API Endpoints
 
 | Endpoint | Method | Description |
 |:---|:---:|:---|
@@ -105,7 +105,7 @@ curl -X POST http://localhost:8000/train
 | `/users` | GET | List all modeled users |
 | `/users/{id}` | GET | Get user profile |
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Component | Technology |
 |:---|:---|
@@ -118,16 +118,16 @@ curl -X POST http://localhost:8000/train
 | Rating Model | SVD + Bayesian Bias + Collaborative Filtering |
 | Container | Docker + Docker Compose |
 
-## 📊 Datasets
+## Datasets
 
 - **Amazon Reviews 2023** (McAuley Lab) — Electronics
 - **Yelp Reviews** — Restaurants & Services
 - **Goodreads** — Books
 
-## 👥 Team Cerebral
+## Team Cerebral
 
 DSN × BCT Data & AI Summit Hackathon 3.0
 
-## 📄 License
+## License
 
 MIT License

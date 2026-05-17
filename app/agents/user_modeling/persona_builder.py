@@ -1,7 +1,6 @@
 """
-NaijaReview AI — User Persona Builder
-Analyzes user review history to build a comprehensive behavioral profile.
-This is the foundation of Task A: understanding users deeply enough to simulate them.
+User persona builder. Analyzes review history to extract a behavioral
+fingerprint covering writing style, tone, rating patterns, and preferences.
 """
 
 import re
@@ -168,7 +167,7 @@ class PersonaBuilder:
             return "neutral"
 
         reviews_text = "\n".join(
-            f"[{r.get('rating', '?')}★] {r.get('review_text', '')[:200]}"
+            f"[{r.get('rating', '?')} stars] {r.get('review_text', '')[:200]}"
             for r in sample_reviews[:5]
         )
 

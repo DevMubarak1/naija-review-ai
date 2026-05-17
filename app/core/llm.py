@@ -1,7 +1,6 @@
 """
-NaijaReview AI — LLM Client Module
-Provides unified access to Groq (primary) and OpenAI (fallback) LLMs.
-Implements automatic fallback, retry logic, and structured output parsing.
+Unified LLM client with Groq (primary) and OpenAI (fallback).
+Implements automatic provider failover, retry logic, and structured output parsing.
 """
 
 import json

@@ -1,6 +1,5 @@
 """
-NaijaReview AI — Memory Store
-Manages user profiles, session history, and persistent memory for agents.
+Persistent memory store for user profiles and conversation sessions.
 """
 
 import json

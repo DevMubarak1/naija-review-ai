@@ -1,6 +1,6 @@
 """
-NaijaReview AI — FastAPI Backend
-RESTful API for both Task A (User Modeling) and Task B (Recommendation).
+FastAPI backend providing REST endpoints for review generation (Task A)
+and personalized recommendation (Task B).
 """
 
 import uuid
@@ -13,9 +13,7 @@ from pydantic import BaseModel, Field
 from loguru import logger
 
 
-# ============================================================
-# REQUEST/RESPONSE MODELS
-# ============================================================
+# --- Request / Response Models ---
 
 class TaskARequest(BaseModel):
     """Request for Task A: Generate review + rating."""
@@ -88,9 +86,7 @@ class HealthResponse(BaseModel):
     models_trained: bool
 
 
-# ============================================================
-# APP SETUP
-# ============================================================
+# --- App Setup ---
 
 _models_trained = False
 
@@ -99,7 +95,7 @@ _models_trained = False
 async def lifespan(app: FastAPI):
     """Startup and shutdown logic."""
     global _models_trained
-    logger.info("🚀 NaijaReview AI starting up...")
+    logger.info("Starting NaijaReview AI...")
 
     # Try to load pre-trained models
     try:
@@ -107,7 +103,7 @@ async def lifespan(app: FastAPI):
         rating_predictor.load_model()
         if rating_predictor.is_trained:
             _models_trained = True
-            logger.info("Pre-trained rating model loaded ✓")
+            logger.info("Pre-trained rating model loaded")
     except Exception as e:
         logger.info(f"No pre-trained model found: {e}")
 
@@ -131,9 +127,7 @@ app.add_middleware(
 )
 
 
-# ============================================================
-# ENDPOINTS
-# ============================================================
+# --- Endpoints ---
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health_check():

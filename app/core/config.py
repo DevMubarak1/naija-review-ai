@@ -1,7 +1,6 @@
 """
-NaijaReview AI — Configuration Module
-Loads environment variables and provides centralized settings.
-Supports both .env file and Streamlit Cloud secrets.
+Centralized configuration loaded from environment variables.
+Supports both .env files and Streamlit Cloud secrets.
 """
 
 import os

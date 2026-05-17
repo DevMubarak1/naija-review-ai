@@ -1,6 +1,5 @@
 """
-NaijaReview AI — Vector Store
-ChromaDB wrapper for storing and retrieving item/review embeddings.
+ChromaDB wrapper for storing and retrieving item embeddings via semantic search.
 """
 
 from typing import Optional

@@ -1,5 +1,5 @@
 """
-NaijaReview AI — Review Generator (Optimized for ROUGE/BERTScore)
+Review generator optimized for ROUGE/BERTScore. Uses vocabulary-forcing
 Generates realistic reviews with higher lexical overlap via category-matched
 few-shot examples, key-phrase extraction, and lower temperature.
 """
@@ -91,7 +91,7 @@ class ReviewGenerator:
         result["rating"] = max(1.0, min(5.0, result["rating"]))
 
         logger.info(
-            f"Generated review: {result['rating']}★, "
+            f"Generated review: {result['rating']}/5, "
             f"{len(result['review_text'].split())} words"
         )
         return result
@@ -214,7 +214,7 @@ Guidelines:
         for i, review in enumerate(ordered, 1):
             cat_match = " [SAME CATEGORY]" if review.get("category", "").lower() == target_category.lower() else ""
             examples.append(
-                f"Example {i} ({review.get('rating', '?')}★ for "
+                f"Example {i} ({review.get('rating', '?')}/5 for "
                 f"{review.get('item_name', 'an item')}{cat_match}):\n"
                 f"\"{review.get('review_text', 'N/A')}\""
             )
@@ -279,7 +279,7 @@ WORDS THIS USER ACTUALLY USES (you MUST include at least 4 of these):
 {', '.join(must_use) if must_use else 'good, great, quality, product'}
 
 TASK: Write a review for "{item_name}" ({item_category}).
-- Rating: EXACTLY {rating_val}★ (do not change this number)
+- Rating: EXACTLY {rating_val}/5 (do not change this number)
 - Length: EXACTLY {avg_length} words (count carefully)
 - Use the user's actual vocabulary listed above
 - Copy their sentence patterns from the examples above

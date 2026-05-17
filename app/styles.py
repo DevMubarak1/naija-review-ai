@@ -1,4 +1,4 @@
-"""NaijaReview AI — Styles & SVG Assets (v2 — Streamlit AI Assistant inspired)"""
+"""Styles and SVG assets for the Streamlit dashboard."""
 
 # ── Logos ──
 LOGO = '<svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#1a7a4c"/><path d="M8 12L18 8l10 4v12l-10 4-10-4Z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><circle cx="18" cy="17" r="4" fill="#fff" opacity=".9"/><path d="M16 17l1.5 1.5L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'

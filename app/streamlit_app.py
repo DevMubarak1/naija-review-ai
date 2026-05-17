@@ -1,5 +1,4 @@
-"""NaijaReview AI — Dashboard (v2 — Streamlit AI Assistant inspired UI)
-Supports both direct pipeline calls and FastAPI backend."""
+"""Streamlit dashboard with direct pipeline support and FastAPI fallback."""
 import json, os, sys, uuid, traceback, streamlit as st
 
 # Ensure project root is on sys.path for imports

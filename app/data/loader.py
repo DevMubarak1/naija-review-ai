@@ -1,5 +1,5 @@
 """
-NaijaReview AI — Dataset Loader
+Dataset loader for Amazon, Yelp, and Goodreads reviews.
 Downloads and preprocesses subsets of Yelp, Amazon Reviews, and Goodreads.
 Uses HuggingFace Datasets for efficient streaming to save disk space.
 """

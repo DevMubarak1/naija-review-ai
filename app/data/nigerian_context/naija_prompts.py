@@ -1,5 +1,5 @@
 """
-NaijaReview AI — Nigerian Context Module
+Nigerian context module for culturally-aware prompts and responses.
 Provides Nigerian English/Pidgin adaptation for reviews and recommendations.
 This is the SECRET WEAPON for bonus points.
 """

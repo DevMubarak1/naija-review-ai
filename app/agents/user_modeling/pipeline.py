@@ -1,6 +1,6 @@
 """
-NaijaReview AI — Task A Pipeline
-End-to-end pipeline: User Persona + Product → Rating + Review
+Task A pipeline: builds a user persona, predicts rating, and generates
+a review in the user's voice for a given product.
 """
 
 from typing import Optional
@@ -47,7 +47,7 @@ class UserModelingPipeline:
         Returns:
             dict with: rating, review_text, user_profile_summary, confidence
         """
-        logger.info(f"=== Task A Pipeline: {user_id} → {item_name} ===")
+        logger.info(f"Task A pipeline: {user_id} -> {item_name}")
 
         # Step 1: Build or load user persona
         profile = memory_store.load_profile(user_id)
@@ -96,7 +96,7 @@ class UserModelingPipeline:
         }
 
         logger.info(
-            f"Pipeline complete: {result['rating']}★, "
+            f"Pipeline complete: {result['rating']} stars, "
             f"{len(result['review_text'].split())} words"
         )
         return result
