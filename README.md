@@ -46,7 +46,7 @@ NaijaReview AI is an agentic AI system that deeply understands users as dynamic,
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/YOUR_TEAM/naija-review-ai.git
+git clone https://github.com/DevMubarak1/naija-review-ai.git
 cd naija-review-ai
 
 # 2. Configure API keys
@@ -115,7 +115,7 @@ curl -X POST http://localhost:8000/train
 | Vector Store | ChromaDB |
 | Backend | FastAPI |
 | Frontend | Streamlit |
-| Rating Model | XGBoost + Collaborative Filtering + LLM |
+| Rating Model | SVD + Bayesian Bias + Collaborative Filtering |
 | Container | Docker + Docker Compose |
 
 ## 📊 Datasets
