@@ -304,7 +304,46 @@ Four consistent outlier users (e.g., average tone="enthusiastic", actual held-ou
 
 ---
 
-## 7. Technical Stack and Reproducibility
+## 7. Qualitative Examples
+
+### 7.1 Task A — Generated vs. Ground Truth Review
+
+**User profile:** 8 reviews, average rating 3.8, tone: "casual conversationalist", avg length: 11 words.
+
+**Input:** Samsung Galaxy Buds3 Pro (Electronics)
+
+| | Text | Rating |
+|---|---|---|
+| **Ground truth** | "Sound quality is great. Comfortable fit. Worth it." | 4 |
+| **Generated** | "Sound quality great, comfortable fit. Good product worth it." | 4.02 |
+
+The generated review reuses 6 of 9 ground-truth words (**ROUGE-1: 0.67**), matches the user's terse style, and the predicted rating is within 0.02 of actual. This is the vocabulary-forcing technique from Section 3.4 in action: the system did not generate a generic positive review — it reconstructed this specific user's voice.
+
+### 7.2 Task B — Recommendation Example
+
+**User:** Reviewed JBL Speaker (5/5), Anker Charger (4/5), USB-C Hub (3/5).
+
+**Query:** "Good earbuds for commuting in Lagos"
+
+| Rank | Recommended Item | Explanation |
+|---|---|---|
+| 1 | Sony WF-1000XM5 | Co-occurrence: 73% of JBL Speaker reviewers also reviewed this |
+| 2 | Samsung Galaxy Buds3 Pro | Semantic match to "commuting" + electronics preference |
+| 3 | Oraimo FreePods 4 | Category match + Nigerian brand relevance |
+
+### 7.3 Nigerian Adaptation Comparison
+
+**Same user, same product (Oraimo Power Bank 20000mAh):**
+
+> **Nigerian mode ON:** "This powerbank too good sha, e charge fast fast. Perfect for when NEPA take light. No disappoint at all!"
+>
+> **Nigerian mode OFF:** "Great power bank, charges quickly. Good for power outages. Not disappointed."
+
+The Nigerian output uses Pidgin syntax ("too good sha"), reduplication ("fast fast"), and culturally specific references ("NEPA take light") that a Nigerian user would immediately recognise as authentic.
+
+---
+
+## 8. Technical Stack and Reproducibility
 
 | Component | Technology |
 |:---|:---|
@@ -320,58 +359,19 @@ Four consistent outlier users (e.g., average tone="enthusiastic", actual held-ou
 
 ---
 
-## 11. What We Would Do With More Time
+## 9. What We Would Do With More Time
 
-### 11.1 Rating Prediction (RMSE -> 0.75)
+### 9.1 Rating Prediction (RMSE → 0.75)
 - **Neural Collaborative Filtering (NeuMF):** Train a deep matrix factorization model on the full interaction matrix, capturing non-linear user-item patterns that linear SVD misses
 - **Item content embeddings as rating signal:** Compute cosine similarity between user preference vectors and item embeddings, using alignment as an additional prediction feature
 
-### 11.2 Review Quality (ROUGE -> 0.45)
+### 9.2 Review Quality (ROUGE → 0.45)
 - **Retrieval-augmented generation:** At generation time, retrieve the user's most similar past review (by item category + rating) and use it as a direct template, replacing only product-specific nouns
 - **User-specific fine-tuning:** For users with 20+ reviews, fine-tune a small language model (e.g., GPT-2) on their corpus to internalize vocabulary patterns beyond prompt-level forcing
 
-### 11.3 Recommendation (maintaining elite NDCG)
+### 9.3 Recommendation (maintaining elite NDCG)
 - **Implicit feedback signals:** Incorporate review text sentiment (not just ratings) into the CF signal — a 3-star review with positive text should rank differently from a 3-star review with negative text
 - **Real-time Pidgin detection:** Automatically detect Nigerian English in user reviews to trigger cultural adaptation without requiring metadata flags
-
----
-
-## 9. Qualitative Examples
-
-### 9.1 Task A — Generated vs. Ground Truth Review
-
-**User profile:** 8 reviews, average rating 3.8, tone: "casual conversationalist", avg length: 11 words.
-
-**Input:** Samsung Galaxy Buds3 Pro (Electronics)
-
-| | Text | Rating |
-|---|---|---|
-| **Ground truth** | "Sound quality is great. Comfortable fit. Worth it." | 4 |
-| **Generated** | "Sound quality great, comfortable fit. Good product worth it." | 4.02 |
-
-The generated review reuses 6 of 9 ground-truth words (ROUGE-1: 0.67), matches the user's terse style, and the predicted rating is within 0.02 of actual.
-
-### 9.2 Task B — Recommendation Example
-
-**User:** Reviewed JBL Speaker (5/5), Anker Charger (4/5), USB-C Hub (3/5).
-
-**Query:** "Good earbuds for commuting in Lagos"
-
-| Rank | Recommended Item | Explanation |
-|---|---|---|
-| 1 | Sony WF-1000XM5 | Co-occurrence: 73% of JBL Speaker reviewers also reviewed this |
-| 2 | Samsung Galaxy Buds3 Pro | Semantic match to "commuting" + electronics preference |
-| 3 | Oraimo FreePods 4 | Category match + Nigerian brand relevance |
-
-### 9.3 Nigerian Adaptation Comparison
-
-**Same user, same product (Oraimo Power Bank 20000mAh):**
-
-> **Nigerian mode ON:** "This powerbank too good sha, e charge fast fast. Perfect for when NEPA take light. No disappoint at all!"
->
-> **Nigerian mode OFF:** "Great power bank, charges quickly. Good for power outages. Not disappointed."
-
-The Nigerian output uses Pidgin syntax ("too good sha"), reduplication ("fast fast"), and culturally specific references ("NEPA take light") that a Nigerian user would immediately recognise as authentic.
 
 ---
 

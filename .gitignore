@@ -20,6 +20,7 @@ env/
 # Data (too large for git)
 data/raw/
 data/chroma_db/
+data/chroma_test/
 data/processed/
 data/memory/profiles/
 data/memory/sessions/
