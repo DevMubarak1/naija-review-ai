@@ -1,0 +1,1630 @@
+diff --git a/.streamlit/config.toml b/.streamlit/config.toml
+index 49f1ba5..aefc45b 100644
+--- a/.streamlit/config.toml
++++ b/.streamlit/config.toml
+@@ -2,7 +2,7 @@
+ base = "light"
+ primaryColor = "#1a7a4c"
+ backgroundColor = "#ffffff"
+-secondaryBackgroundColor = "#f9fafb"
++secondaryBackgroundColor = "#f8f9fa"
+ textColor = "#111827"
+ font = ""  
+ 
+diff --git a/app/streamlit_app.py b/app/streamlit_app.py
+index 3c3ec69..2b53d7f 100644
+--- a/app/streamlit_app.py
++++ b/app/streamlit_app.py
+@@ -8,20 +8,27 @@ if _ROOT not in sys.path:
+ 
+ from app.styles import CSS, LOGO, LOGO_SM, AV_USER, AV_AI, STOP_IC, IC, nav_html, SUGGESTIONS
+ 
+-st.set_page_config(page_title="NaijaReview AI", page_icon="🇳🇬", layout="wide",
++st.set_page_config(page_title="NaijaReview AI", layout="wide",
+                    initial_sidebar_state="expanded")
+ st.markdown(CSS, unsafe_allow_html=True)
+ 
+ HIST_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "chat_history.json")
+ 
+-# ── Try to import local pipeline modules for direct calls ──
+-_DIRECT_MODE = False
+-try:
++# Check if local pipeline files exist on disk to determine if direct mode is supported.
++# We avoid importing them here at the module level because importing heavy ML modules
++# (e.g. PyTorch, sentence-transformers, XGBoost) takes 15+ seconds, causing Streamlit connection timeouts.
++_DIRECT_MODE = (
++    os.path.exists(os.path.join(_ROOT, "app", "agents", "user_modeling", "pipeline.py")) and
++    os.path.exists(os.path.join(_ROOT, "app", "agents", "recommendation", "pipeline.py"))
++)
++
++def load_user_modeling_pipeline():
+     from app.agents.user_modeling.pipeline import user_modeling_pipeline
++    return user_modeling_pipeline
++
++def load_recommendation_pipeline():
+     from app.agents.recommendation.pipeline import recommendation_pipeline
+-    _DIRECT_MODE = True
+-except Exception:
+-    pass
++    return recommendation_pipeline
+ 
+ # Also try FastAPI if available
+ API = os.getenv("API_URL", "http://localhost:8000")
+@@ -63,23 +70,29 @@ if "prefs" not in st.session_state:
+ # ══════════════════════════════════════════
+ # SMART API — tries direct first, then FastAPI
+ # ══════════════════════════════════════════
+-def api_ok():
+-    """Check if backend is available (direct or API)."""
+-    if _DIRECT_MODE:
+-        return True
++@st.cache_data(show_spinner=False, ttl=10)
++def check_api_health(api_url):
+     try:
+         import requests
+-        return requests.get(f"{API}/health", timeout=3).ok
++        r = requests.get(f"{api_url}/health", timeout=1.0)
++        return r.ok
+     except Exception:
+         return False
+ 
++def api_ok():
++    """Check if backend is available (direct or API)."""
++    if _DIRECT_MODE:
++        return True
++    return check_api_health(API)
++
+ 
+ def smart_chat(msg, sid):
+     """Multi-turn conversational recommendation."""
+     # Try direct pipeline first
+     if _DIRECT_MODE:
+         try:
+-            result = recommendation_pipeline.conversational_recommend(
++            pipeline = load_recommendation_pipeline()
++            result = pipeline.conversational_recommend(
+                 user_id="demo_user_001",
+                 message=msg,
+                 session_id=sid,
+@@ -87,7 +100,8 @@ def smart_chat(msg, sid):
+             )
+             return result.get("response", "I couldn't process that.")
+         except Exception as e:
+-            return f"Error: {str(e)[:200]}"
++            # Log and fallback to API
++            print(f"Direct mode chat failed: {e}", file=sys.stderr)
+ 
+     # Fallback to FastAPI
+     try:
+@@ -108,14 +122,16 @@ def smart_generate_review(uid, item, cat, desc, is_ng, region, reviews):
+     """Task A: Generate review."""
+     if _DIRECT_MODE:
+         try:
+-            result = user_modeling_pipeline.run(
++            pipeline = load_user_modeling_pipeline()
++            result = pipeline.run(
+                 user_id=uid, item_name=item, item_category=cat,
+                 item_description=desc, reviews=reviews,
+                 is_nigerian=is_ng, region=region,
+             )
+             return result
+         except Exception as e:
+-            return {"error": str(e)[:300]}
++            # Log and fallback to API
++            print(f"Direct mode generate review failed: {e}", file=sys.stderr)
+ 
+     try:
+         import requests
+@@ -135,13 +151,15 @@ def smart_recommend(uid, query, top_k, is_ng, cat_filter, reviews):
+     """Task B: Get recommendations."""
+     if _DIRECT_MODE:
+         try:
+-            result = recommendation_pipeline.recommend(
++            pipeline = load_recommendation_pipeline()
++            result = pipeline.recommend(
+                 user_id=uid, query=query, user_reviews=reviews,
+                 top_k=top_k, is_nigerian=is_ng, category_filter=cat_filter,
+             )
+             return result
+         except Exception as e:
+-            return {"error": str(e)[:300]}
++            # Log and fallback to API
++            print(f"Direct mode recommendation failed: {e}", file=sys.stderr)
+ 
+     try:
+         import requests
+@@ -167,14 +185,19 @@ def nav_btn(icon_key, label, key, mode_check=None):
+ # ══════════════════════════════════════════
+ # SIDEBAR
+ # ══════════════════════════════════════════
++online = api_ok()
++_mode_label = "Direct" if _DIRECT_MODE else ("API" if online else "Offline")
++_mode_color = "#22c55e" if (_DIRECT_MODE or online) else "#ef4444"
++
+ with st.sidebar:
+     # Logo
+     st.markdown(f'''<div class="sidebar-logo">
+         {LOGO}<span>NaijaReview AI</span>
++        <span class="status-dot" style="background:{_mode_color};"></span>
+     </div>''', unsafe_allow_html=True)
+ 
+     # New Chat
+-    if st.button("✦  New chat", key="new_chat", type="primary", use_container_width=True):
++    if st.button("New chat", key="new_chat", type="primary", use_container_width=True, icon=":material/add:"):
+         st.session_state.mode = "home"
+         st.session_state.result = None
+         st.session_state.msgs = []
+@@ -198,17 +221,18 @@ with st.sidebar:
+     # ── Recents ──
+     if st.session_state.history:
+         st.markdown('<div class="nav-sec">Recents</div>', unsafe_allow_html=True)
+-        for i, h in enumerate(st.session_state.history[:6]):
++        for i, h in enumerate(st.session_state.history[:8]):
+             col_title, col_del = st.columns([0.85, 0.15])
+             with col_title:
+-                st.markdown(nav_html("chat", h["title"][:28]), unsafe_allow_html=True)
+-                if st.button(h["title"][:28], key=f"rc_{i}", use_container_width=True):
++                icon = "edit" if h.get("mode") == "review" else ("star" if h.get("mode") == "recommend" else "chat")
++                st.markdown(nav_html(icon, h["title"][:30]), unsafe_allow_html=True)
++                if st.button(h["title"][:30], key=f"rc_{i}", use_container_width=True):
+                     st.session_state.mode = h.get("mode", "chat")
+                     st.session_state.msgs = h.get("msgs", [])
+                     st.session_state.result = None
+                     st.rerun()
+             with col_del:
+-                st.markdown(f'<div class="del-btn" style="margin-top:4px;">{IC["x"]}</div>',
++                st.markdown(f'<div class="del-btn">{IC["x"]}</div>',
+                             unsafe_allow_html=True)
+                 if st.button("x", key=f"del_{i}", use_container_width=True):
+                     st.session_state.history.pop(i)
+@@ -216,57 +240,49 @@ with st.sidebar:
+                     st.rerun()
+ 
+     # Bottom spacer + user card
+-    st.markdown('<div style="height:70px;"></div>', unsafe_allow_html=True)
++    st.markdown('<div style="height:80px;"></div>', unsafe_allow_html=True)
+     st.markdown(f'''<div class="user-card">
+-        <div class="user-av">RM</div>
+-        <div><div class="user-nm">Raji Mubarak</div>
+-        <div class="user-pl">Team Cerebral</div></div>
++        <div class="user-av">TC</div>
++        <div>
++            <div class="user-nm">Team Cerebral</div>
++            <div class="user-pl">DSN × BCT Hackathon 3.0</div>
++        </div>
+     </div>''', unsafe_allow_html=True)
+ 
+ 
+ # ══════════════════════════════════════════
+-# MAIN CONTENT
++# MAIN CONTENT AREA
+ # ══════════════════════════════════════════
+-online = api_ok()
+-
+-# Backend mode indicator
+-_mode_label = "Direct" if _DIRECT_MODE else ("API" if online else "Offline")
+-_mode_color = "#22c55e" if (_DIRECT_MODE or online) else "#ef4444"
+-
+-# Top bar (shown on all modes except home)
+-if st.session_state.mode != "home":
+-    st.markdown(f'''<div class="top-bar">
+-        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
+-        <span style="font-size:.78rem;color:{_mode_color};font-weight:500;">
+-            <span class="dot" style="background:{_mode_color};"></span>
+-            {_mode_label}
+-        </span>
+-    </div>''', unsafe_allow_html=True)
+-
+ 
+ # ════════ HOME — Hero Landing ════════
+ if st.session_state.mode == "home":
+-    st.markdown('<div style="height:18vh;"></div>', unsafe_allow_html=True)
+-
+-    # Hero emoji + title + subtitle
+-    st.markdown('<div class="hero-emoji">✦</div>', unsafe_allow_html=True)
+-    st.markdown('<div class="hero-title">NaijaReview AI</div>', unsafe_allow_html=True)
+-    st.markdown('<div class="hero-sub">Your AI-powered review generator & recommendation engine.<br>'
+-                'Ask anything about products, get personalized recommendations, or generate reviews.</div>',
+-                unsafe_allow_html=True)
++    # Vertical spacing to center content
++    st.markdown('<div class="hero-spacer"></div>', unsafe_allow_html=True)
++
++    # Greeting + branding
++    st.markdown('''<div class="hero-section">
++        <div class="hero-icon">✦</div>
++        <h1 class="hero-title">NaijaReview AI</h1>
++        <p class="hero-sub">
++            Your AI-powered review generator &amp; recommendation engine.<br>
++            Generate reviews, get personalized recommendations, or chat about products.
++        </p>
++    </div>''', unsafe_allow_html=True)
+ 
+-    # Centered input
++    # Centered input area
+     _p1, cc, _p2 = st.columns([1.2, 2.5, 1.2])
+     with cc:
+         query = st.text_input("Ask", placeholder="Ask anything about reviews, recommendations...",
+                               label_visibility="collapsed", key="home_q")
+ 
+-        # Suggestion pills
++        # Suggestion pills (2x2 grid for clean spacing and no wrapping)
+         st.markdown('<div class="suggestion-pills">', unsafe_allow_html=True)
+-        pill_cols = st.columns(len(SUGGESTIONS))
++        r1_c1, r1_c2 = st.columns(2)
++        r2_c1, r2_c2 = st.columns(2)
++        grid_cols = [r1_c1, r1_c2, r2_c1, r2_c2]
+         for idx, sug in enumerate(SUGGESTIONS):
+-            with pill_cols[idx]:
+-                if st.button(f'{sug["icon"]}  {sug["label"]}', key=f"sug_{idx}", use_container_width=True):
++            with grid_cols[idx]:
++                if st.button(sug["label"], key=f"sug_{idx}", use_container_width=True, icon=sug["icon"]):
+                     if sug["mode"] == "chat":
+                         st.session_state.mode = "chat"
+                         if "Pidgin" in sug["label"]:
+@@ -281,10 +297,10 @@ if st.session_state.mode == "home":
+                     st.rerun()
+         st.markdown('</div>', unsafe_allow_html=True)
+ 
+-        # Powered-by footer
++        # Footer
+         st.markdown(f'''<div class="powered-by">
+             Powered by <a href="#">Groq Llama 3.3</a> · <a href="#">OpenAI GPT-4o-mini</a> · Team Cerebral
+-            <br><span style="color:{'#22c55e' if online else '#ef4444'}">● {_mode_label}</span>
++            <br><span style="color:{_mode_color}">● {_mode_label}</span>
+         </div>''', unsafe_allow_html=True)
+ 
+         if query:
+@@ -302,21 +318,40 @@ if st.session_state.mode == "home":
+ 
+ # ════════ REVIEW ════════
+ elif st.session_state.mode == "review":
++    # Top bar
++    st.markdown(f'''<div class="top-bar">
++        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
++        <div class="mode-indicator">
++            <span class="dot" style="background:{_mode_color};"></span>
++            <span style="color:{_mode_color};">{_mode_label}</span>
++        </div>
++    </div>''', unsafe_allow_html=True)
++
++    # Mode badge
+     st.markdown(f'<div class="mode-pill">{IC["edit"]} Generate Review</div>', unsafe_allow_html=True)
++
++    # Centered form
+     _p1, cm, _p2 = st.columns([1, 3, 1])
+     with cm:
+-        st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
++        st.markdown('<div class="form-container">', unsafe_allow_html=True)
+         p = st.session_state.prefs
++
++        # User ID
+         uid = st.text_input("User ID", "demo_user_001", key="a_uid")
++
++        # Two-column form
+         c1, c2 = st.columns(2)
+         with c1:
+-            item = st.text_input("Product", "Samsung Galaxy Buds3 Pro")
++            item = st.text_input("Product Name", "Samsung Galaxy Buds3 Pro")
+             cat = st.selectbox("Category", ["Electronics", "Restaurants", "Books", "Fashion", "Movies"],
+                                index=["Electronics", "Restaurants", "Books", "Fashion", "Movies"].index(p["default_category"]))
+         with c2:
+-            desc = st.text_area("Description", "Premium wireless earbuds with ANC and 360 Audio.", height=100)
+-            is_ng = st.toggle("Nigerian Mode 🇳🇬", p["nigerian_mode"], key="a_ng")
+-        if st.button("Generate Review  →", type="primary", use_container_width=True, key="gen"):
++            desc = st.text_area("Product Description", "Premium wireless earbuds with ANC and 360 Audio.", height=100)
++            is_ng = st.toggle("Nigerian Mode", p["nigerian_mode"], key="a_ng")
++
++        # Generate button
++        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
++        if st.button("Generate Review", type="primary", use_container_width=True, key="gen", icon=":material/arrow_forward:"):
+             reviews = [
+                 {"rating": 5, "review_text": "Amazing!", "item_name": "Headphones", "category": "Electronics"},
+                 {"rating": 4, "review_text": "Good value.", "item_name": "Phone Case", "category": "Electronics"},
+@@ -330,32 +365,71 @@ elif st.session_state.mode == "review":
+                     st.session_state.result = result
+                     st.session_state.history.insert(0, {"title": f"{item} review", "mode": "review", "msgs": []})
+                     _save_history()
++
++        # Results
+         if st.session_state.result and st.session_state.mode == "review":
+             d = st.session_state.result
++            st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
++
++            # Metrics row
+             st.markdown(f'''<div class="metric-row">
+-                <div class="metric-card"><div class="metric-val">{d.get("rating",0):.1f}</div><div class="metric-lbl">Rating</div></div>
+-                <div class="metric-card"><div class="metric-val">{d.get("confidence",0):.0%}</div><div class="metric-lbl">Confidence</div></div>
+-                <div class="metric-card"><div class="metric-val">{len(d.get("review_text","").split())}</div><div class="metric-lbl">Words</div></div>
+-            </div><div class="review-box">{d.get("review_text","")}</div>''', unsafe_allow_html=True)
+-            with st.expander("🧠 Agent Reasoning"):
++                <div class="metric-card">
++                    <div class="metric-val">{d.get('rating',0):.1f} <span style="font-size:1.1rem;vertical-align:middle;color:#1a7a4c;">★</span></div>
++                    <div class="metric-lbl">Predicted Rating</div>
++                </div>
++                <div class="metric-card">
++                    <div class="metric-val">{d.get("confidence",0):.0%}</div>
++                    <div class="metric-lbl">Confidence</div>
++                </div>
++                <div class="metric-card">
++                    <div class="metric-val">{len(d.get("review_text","").split())}</div>
++                    <div class="metric-lbl">Word Count</div>
++                </div>
++            </div>''', unsafe_allow_html=True)
++
++            # Generated review
++            st.markdown(f'''<div class="review-box">
++                <div class="review-quote">❝</div>
++                {d.get("review_text","")}
++            </div>''', unsafe_allow_html=True)
++
++            with st.expander("Agent Reasoning", icon=":material/psychology:"):
+                 st.write(d.get("reasoning", ""))
+ 
++        st.markdown('</div>', unsafe_allow_html=True)
++
+ 
+ # ════════ RECOMMEND ════════
+ elif st.session_state.mode == "recommend":
++    # Top bar
++    st.markdown(f'''<div class="top-bar">
++        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
++        <div class="mode-indicator">
++            <span class="dot" style="background:{_mode_color};"></span>
++            <span style="color:{_mode_color};">{_mode_label}</span>
++        </div>
++    </div>''', unsafe_allow_html=True)
++
++    # Mode badge
+     st.markdown(f'<div class="mode-pill">{IC["star"]} Get Recommendations</div>', unsafe_allow_html=True)
++
++    # Centered form
+     _p1, cm, _p2 = st.columns([1, 3, 1])
+     with cm:
+-        st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
++        st.markdown('<div class="form-container">', unsafe_allow_html=True)
+         p = st.session_state.prefs
++
+         uid = st.text_input("User ID", "demo_user_001", key="b_uid")
+         q = st.text_input("What are you looking for?", placeholder="e.g. Good earbuds for Lagos traffic", key="b_q")
++
+         c1, c2 = st.columns(2)
+         with c1:
+-            k = st.slider("Results", 3, 15, p["top_k"])
++            k = st.slider("Number of results", 3, 15, p["top_k"])
+         with c2:
+-            cat_f = st.selectbox("Category", [None, "Electronics", "Restaurants", "Books"], key="b_cat")
+-        if st.button("Get Recommendations  →", type="primary", use_container_width=True, key="rec"):
++            cat_f = st.selectbox("Category filter", [None, "Electronics", "Restaurants", "Books"], key="b_cat")
++
++        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
++        if st.button("Get Recommendations", type="primary", use_container_width=True, key="rec", icon=":material/arrow_forward:"):
+             reviews = [{"rating": 5, "review_text": "Love this!", "item_name": "JBL Speaker", "category": "Electronics"}]
+             with st.spinner("Searching & ranking..."):
+                 result = smart_recommend(uid, q, k, p["nigerian_mode"], cat_f, reviews)
+@@ -365,50 +439,93 @@ elif st.session_state.mode == "recommend":
+                     st.session_state.result = result
+                     st.session_state.history.insert(0, {"title": f"Recs: {q[:25]}" if q else "Recommendations", "mode": "recommend", "msgs": []})
+                     _save_history()
++
++        # Results
+         if st.session_state.result and st.session_state.mode == "recommend":
+             data = st.session_state.result
+-            st.caption(f"🔍 {data.get('total_candidates_considered', 0)} candidates evaluated")
++            st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
++            st.markdown(f'''<div class="results-header">
++                {IC["search"]} <span>{data.get('total_candidates_considered', 0)} candidates evaluated</span>
++            </div>''', unsafe_allow_html=True)
++
+             for rec in data.get("recommendations", []):
++                score_pct = rec.get("score", 0)
++                if isinstance(score_pct, (int, float)) and score_pct <= 1:
++                    score_pct = f"{score_pct:.0%}"
++                else:
++                    score_pct = f"{score_pct}"
++
+                 st.markdown(f'''<div class="rec-card">
+                     <div class="rec-rank">{rec.get("rank","")}</div>
+-                    <div style="flex:1;">
+-                        <div class="rec-name">{rec.get("item_name","")}</div>
+-                        <span class="rec-cat">{rec.get("category","")}</span>
+-                        <div class="rec-desc">{rec.get("explanation","")[:200]}</div>
++                    <div class="rec-body">
++                        <div class="rec-header">
++                            <div class="rec-name">{rec.get("item_name","")}</div>
++                            <span class="rec-cat">{rec.get("category","")}</span>
++                        </div>
++                        <div class="rec-desc">{rec.get("explanation","")[:220]}</div>
+                     </div>
+                 </div>''', unsafe_allow_html=True)
+ 
++        st.markdown('</div>', unsafe_allow_html=True)
++
+ 
+ # ════════ CHAT ════════
+ elif st.session_state.mode == "chat":
+-    st.markdown(f'<div class="mode-pill">{IC["chat"]} Chat with AI</div>', unsafe_allow_html=True)
++    # Top bar
++    st.markdown(f'''<div class="top-bar">
++        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
++        <div class="mode-indicator">
++            <span class="dot" style="background:{_mode_color};"></span>
++            <span style="color:{_mode_color};">{_mode_label}</span>
++        </div>
++    </div>''', unsafe_allow_html=True)
+ 
++    # Show empty state if no messages
++    if not st.session_state.msgs:
++        st.markdown(f'''<div class="chat-empty">
++            <div class="chat-empty-icon" style="color:#1a7a4c;">{IC["chat"]}</div>
++            <div class="chat-empty-title">Start a conversation</div>
++            <div class="chat-empty-sub">Ask about products, get recommendations, or chat in Nigerian Pidgin.</div>
++        </div>''', unsafe_allow_html=True)
++
++    # Render existing messages
+     for m in st.session_state.msgs:
+         av = AV_AI if m["role"] == "assistant" else AV_USER
++        role_class = "msg-ai" if m["role"] == "assistant" else "msg-user"
+         with st.chat_message(m["role"]):
+-            st.markdown(f'''<div style="display:flex;gap:12px;align-items:flex-start;">
+-                <div style="flex-shrink:0;margin-top:2px;">{av}</div>
+-                <div style="font-size:.9rem;line-height:1.7;color:#111827;">{m["content"]}</div>
++            st.markdown(f'''<div class="chat-msg {role_class}">
++                <div class="chat-avatar">{av}</div>
++                <div class="chat-text">{m["content"]}</div>
+             </div>''', unsafe_allow_html=True)
+ 
++    # Chat input
+     if prompt := st.chat_input("Ask for recommendations, reviews, or anything..."):
+         st.session_state.msgs.append({"role": "user", "content": prompt})
+         with st.chat_message("user"):
+-            st.markdown(f'<div style="display:flex;gap:12px;align-items:flex-start;">'
+-                        f'<div style="flex-shrink:0;margin-top:2px;">{AV_USER}</div>'
+-                        f'<div style="font-size:.9rem;line-height:1.7;">{prompt}</div></div>',
+-                        unsafe_allow_html=True)
++            st.markdown(f'''<div class="chat-msg msg-user">
++                <div class="chat-avatar">{AV_USER}</div>
++                <div class="chat-text">{prompt}</div>
++            </div>''', unsafe_allow_html=True)
++
+         with st.chat_message("assistant"):
+             ph = st.empty()
+-            ph.markdown(f'<div style="display:flex;gap:12px;align-items:center;">'
+-                        f'<div style="flex-shrink:0;">{AV_AI}</div>'
+-                        f'<div style="color:#9ca3af;display:flex;align-items:center;gap:6px;">'
+-                        f'{STOP_IC} Thinking...</div></div>', unsafe_allow_html=True)
++            ph.markdown(f'''<div class="chat-msg msg-ai">
++                <div class="chat-avatar">{AV_AI}</div>
++                <div class="chat-thinking">
++                    <div class="thinking-dots">
++                        <span></span><span></span><span></span>
++                    </div>
++                    Thinking...
++                </div>
++            </div>''', unsafe_allow_html=True)
++
+             resp = smart_chat(prompt, st.session_state.sid)
+-            ph.markdown(f'<div style="display:flex;gap:12px;align-items:flex-start;">'
+-                        f'<div style="flex-shrink:0;margin-top:2px;">{AV_AI}</div>'
+-                        f'<div style="font-size:.9rem;line-height:1.7;color:#111827;">{resp}</div></div>',
+-                        unsafe_allow_html=True)
++
++            ph.markdown(f'''<div class="chat-msg msg-ai">
++                <div class="chat-avatar">{AV_AI}</div>
++                <div class="chat-text">{resp}</div>
++            </div>''', unsafe_allow_html=True)
++
+             st.session_state.msgs.append({"role": "assistant", "content": resp})
+             st.session_state.history.insert(0, {
+                 "title": prompt[:30], "mode": "chat",
+@@ -419,27 +536,58 @@ elif st.session_state.mode == "chat":
+ 
+ # ════════ PREFERENCES ════════
+ elif st.session_state.mode == "preferences":
++    # Top bar
++    st.markdown(f'''<div class="top-bar">
++        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
++        <div class="mode-indicator">
++            <span class="dot" style="background:{_mode_color};"></span>
++            <span style="color:{_mode_color};">{_mode_label}</span>
++        </div>
++    </div>''', unsafe_allow_html=True)
++
+     _p1, cm, _p2 = st.columns([1, 3, 1])
+     with cm:
+-        st.markdown(f'<div class="sec-hd">{IC["gear"]} <span style="font-size:1.1rem;font-weight:600;">Preferences</span></div>', unsafe_allow_html=True)
++        st.markdown(f'''<div class="pref-header">
++            {IC["gear"]}
++            <span>Preferences</span>
++        </div>''', unsafe_allow_html=True)
++
++        st.markdown('<div class="form-container">', unsafe_allow_html=True)
+         p = st.session_state.prefs
+-        ng = st.toggle("Nigerian Mode 🇳🇬", p["nigerian_mode"], key="pf_ng")
++
++        # Nigerian mode toggle
++        st.markdown('<div class="pref-section">Language & Region</div>', unsafe_allow_html=True)
++        ng = st.toggle("Nigerian Mode", p["nigerian_mode"], key="pf_ng")
+         region = st.selectbox("Default Region", ["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan", "Enugu"],
+                               index=["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan", "Enugu"].index(p["region"]), key="pf_r")
++
++        st.markdown('<div class="pref-section">Defaults</div>', unsafe_allow_html=True)
+         cat = st.selectbox("Default Category", ["Electronics", "Restaurants", "Books", "Fashion", "Movies"],
+                            index=["Electronics", "Restaurants", "Books", "Fashion", "Movies"].index(p["default_category"]), key="pf_c")
+-        topk = st.slider("Default recommendations", 3, 20, p["top_k"], key="pf_k")
+-        if st.button("Save Preferences  ✓", type="primary", use_container_width=True, key="save_p"):
++        topk = st.slider("Default number of recommendations", 3, 20, p["top_k"], key="pf_k")
++
++        st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
++        if st.button("Save Preferences", type="primary", use_container_width=True, key="save_p", icon=":material/check:"):
+             st.session_state.prefs = {"nigerian_mode": ng, "region": region,
+                                       "default_category": cat, "top_k": topk}
+-            st.success("✅ Preferences saved successfully.")
++            st.success("Preferences saved successfully.")
++
++        st.markdown('</div>', unsafe_allow_html=True)
+ 
+ 
+ # ════════ SYSTEM INFO ════════
+ elif st.session_state.mode == "system_info":
++    st.markdown(f'''<div class="top-bar">
++        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
++        <div class="mode-indicator">
++            <span class="dot" style="background:{_mode_color};"></span>
++            <span style="color:{_mode_color};">{_mode_label}</span>
++        </div>
++    </div>''', unsafe_allow_html=True)
++
+     _p1, cm, _p2 = st.columns([1, 3, 1])
+     with cm:
+-        st.markdown(f'<div class="sec-hd">{IC["info"]} <span style="font-size:1.1rem;font-weight:600;">System Information</span></div>', unsafe_allow_html=True)
++        st.markdown(f'<div class="pref-header">{IC["info"]} <span>System Information</span></div>', unsafe_allow_html=True)
+         st.info(f"**Mode:** {'Direct Pipeline' if _DIRECT_MODE else 'FastAPI Backend'}")
+         if online:
+             try:
+diff --git a/app/styles.py b/app/styles.py
+index 8490df2..84f848a 100644
+--- a/app/styles.py
++++ b/app/styles.py
+@@ -1,4 +1,4 @@
+-"""Styles and SVG assets for the Streamlit dashboard."""
++"""Styles and SVG assets for the NaijaReview AI Streamlit dashboard."""
+ 
+ # ── Logos ──
+ LOGO = '<svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#1a7a4c"/><path d="M8 12L18 8l10 4v12l-10 4-10-4Z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><circle cx="18" cy="17" r="4" fill="#fff" opacity=".9"/><path d="M16 17l1.5 1.5L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+@@ -38,8 +38,8 @@ def nav_html(icon_key, label, active=False):
+     bg = "background:#e8f5ee;color:#1a7a4c;" if active else ""
+     ic_color = "color:#1a7a4c;" if active else "color:#6b7280;"
+     fw = "font-weight:600;" if active else "font-weight:500;"
+-    return f'''<div style="display:flex;align-items:center;gap:10px;padding:7px 12px;
+-        border-radius:8px;{bg}">
++    return f'''<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;
++        border-radius:10px;{bg}transition:all .15s ease;cursor:pointer;">
+         <span style="flex-shrink:0;display:flex;align-items:center;{ic_color}">{IC[icon_key]}</span>
+         <span style="font-size:0.84rem;{fw}color:{'#1a7a4c' if active else '#374151'};">{label}</span>
+     </div>'''
+@@ -47,67 +47,99 @@ def nav_html(icon_key, label, active=False):
+ 
+ # ── Suggestion pill data ──
+ SUGGESTIONS = [
+-    {"icon": "📝", "color": "#1a7a4c", "label": "Generate a product review", "mode": "review"},
+-    {"icon": "⭐", "color": "#e67e22", "label": "Get recommendations for me", "mode": "recommend"},
+-    {"icon": "💬", "color": "#3b82f6", "label": "Chat about reviews & products", "mode": "chat"},
+-    {"icon": "🇳🇬", "color": "#9b59b6", "label": "Try Nigerian Pidgin mode", "mode": "chat"},
++    {"icon": ":material/rate_review:", "color": "#1a7a4c", "label": "Generate a product review", "mode": "review"},
++    {"icon": ":material/recommend:", "color": "#e67e22", "label": "Get recommendations for me", "mode": "recommend"},
++    {"icon": ":material/forum:", "color": "#3b82f6", "label": "Chat about reviews & products", "mode": "chat"},
++    {"icon": ":material/language:", "color": "#9b59b6", "label": "Try Nigerian Pidgin mode", "mode": "chat"},
+ ]
+ 
+ 
+ CSS = """
+ <style>
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
++
++/* ═══════════════════════════════════════════
++   CSS VARIABLES
++   ═══════════════════════════════════════════ */
+ :root{
+-    --bg:#ffffff;--bg2:#f9fafb;--g:#1a7a4c;--gh:#15633e;--gl:#e8f5ee;--gb:#dcf5e7;
+-    --t:#111827;--tm:#4b5563;--tl:#9ca3af;--b:#e5e7eb;--bl:#f3f4f6;--ib:#f3f4f6;
+-    --r:32px;--rs:12px;
++    --bg: #ffffff;
++    --bg2: #f8f9fa;
++    --bg3: #f3f4f6;
++    --green: #1a7a4c;
++    --green-hover: #15633e;
++    --green-light: #e8f5ee;
++    --green-lighter: #dcf5e7;
++    --green-glow: rgba(26,122,76,.08);
++    --text: #111827;
++    --text-mid: #4b5563;
++    --text-light: #9ca3af;
++    --border: #e5e7eb;
++    --border-light: #f3f4f6;
++    --radius: 32px;
++    --radius-sm: 12px;
++    --radius-md: 16px;
++    --shadow-sm: 0 1px 3px rgba(0,0,0,.04);
++    --shadow-md: 0 2px 8px rgba(0,0,0,.06);
++    --shadow-green: 0 2px 8px rgba(26,122,76,.12);
++    --transition: all .2s ease;
+ }
++
++/* ═══════════════════════════════════════════
++   BASE & RESET
++   ═══════════════════════════════════════════ */
+ html,body,[data-testid="stAppViewContainer"],[data-testid="stApp"],.main{
+-    background:var(--bg)!important;font-family:'Inter',sans-serif!important;
++    background:var(--bg)!important;
++    font-family:'Inter',system-ui,-apple-system,sans-serif!important;
+     padding-top:0!important;margin-top:0!important;
+ }
+ .block-container{padding:0!important;max-width:100%!important;}
++*{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+ 
+-/* ── Hide Streamlit chrome ── */
++/* ═══════════════════════════════════════════
++   HIDE STREAMLIT CHROME
++   ═══════════════════════════════════════════ */
+ header[data-testid="stHeader"],[data-testid="stToolbar"],
+ [data-testid="stDecoration"],footer,#MainMenu{display:none!important;height:0!important;}
+-[role="banner"],[role="banner"] *{display:none!important;height:0!important;padding:0!important;margin:0!important}
++[data-testid="stRadio"]{display:none!important;}
++hr{display:none!important;}
+ 
+-/* ── Sidebar CLOSE button ── */
++/* ═══════════════════════════════════════════
++   SIDEBAR — COLLAPSE / EXPAND BUTTONS
++   ═══════════════════════════════════════════ */
+ [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]{
+-    display:flex!important;position:absolute!important;top:8px;right:8px;z-index:2000000!important;
++    display:flex!important;position:absolute!important;top:10px;right:10px;z-index:2000000!important;
+     margin-top:0!important;padding:0!important;
+ }
+ [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button{
+-    background:transparent!important;border:none!important;color:var(--tl)!important;
++    background:transparent!important;border:none!important;color:var(--text-light)!important;
+     padding:4px!important;min-height:0!important;width:28px!important;height:28px!important;
+-    border-radius:6px!important;opacity:1!important;position:relative!important;margin-top:0!important;
++    border-radius:8px!important;opacity:1!important;position:relative!important;margin-top:0!important;
+ }
+ [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button:hover{
+-    background:var(--bl)!important;color:var(--t)!important;
++    background:var(--bg3)!important;color:var(--text)!important;
+ }
+-
+-/* ── Sidebar OPEN button ── */
+ [data-testid="collapsedControl"]{display:flex!important;position:fixed!important;top:12px;left:12px;z-index:2000001!important;transform:none!important;}
+ [data-testid="collapsedControl"] button{
+-    background:var(--bg)!important;border:1px solid var(--b)!important;color:var(--g)!important;
+-    padding:6px!important;border-radius:10px!important;box-shadow:0 2px 8px rgba(0,0,0,.06)!important;
++    background:var(--bg)!important;border:1px solid var(--border)!important;color:var(--green)!important;
++    padding:6px!important;border-radius:10px!important;box-shadow:var(--shadow-md)!important;
+     min-height:0!important;width:36px!important;height:36px!important;
+     display:flex!important;align-items:center!important;justify-content:center!important;
+ }
+-[data-testid="collapsedControl"] button:hover{background:var(--gl)!important;border-color:var(--g)!important;}
++[data-testid="collapsedControl"] button:hover{background:var(--green-light)!important;border-color:var(--green)!important;}
+ [data-testid="stExpandSidebarButton"],[data-testid="stExpandSidebarButton"] button{
+     position:fixed!important;left:12px!important;top:12px!important;z-index:2000002!important;display:flex!important;
+     width:36px!important;height:36px!important;padding:6px!important;
+     align-items:center!important;justify-content:center!important;
+-    background:var(--bg)!important;border:1px solid var(--b)!important;
+-    border-radius:10px!important;box-shadow:0 2px 8px rgba(0,0,0,.06)!important;color:var(--g)!important;
++    background:var(--bg)!important;border:1px solid var(--border)!important;
++    border-radius:10px!important;box-shadow:var(--shadow-md)!important;color:var(--green)!important;
+ }
+ 
+-/* ═══ SIDEBAR ═══ */
++/* ═══════════════════════════════════════════
++   SIDEBAR — BODY
++   ═══════════════════════════════════════════ */
+ [data-testid="stSidebar"]{
+-    background:var(--bg2)!important;border-right:1px solid var(--b)!important;
+-    width:270px!important;padding:0!important;
++    background:var(--bg2)!important;border-right:1px solid var(--border)!important;
++    width:280px!important;padding:0!important;
+     transition:margin-left .25s ease,transform .25s ease!important;
+ }
+ [data-testid="stSidebarUserContent"],[data-testid="stSidebarContent"],
+@@ -119,191 +151,322 @@ section[data-testid="stSidebar"]>div>div>div{
+ }
+ [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]{padding:0!important;margin:0!important;}
+ [data-testid="stSidebar"] .stVerticalBlock{gap:0!important;}
+-section[data-testid="stSidebar"]>div{height:100vh!important;overflow-y:auto!important;padding:0 10px 80px!important;}
++section[data-testid="stSidebar"]>div{height:100vh!important;overflow-y:auto!important;padding:0 12px 90px!important;}
+ section[data-testid="stSidebar"]{padding-top:0!important;margin-top:0!important}
+ 
+-/* ── Sidebar logo ── */
++/* Sidebar logo */
+ .sidebar-logo{
+     position:sticky!important;top:0;z-index:100000!important;
+-    background:var(--bg2);padding:14px 14px 12px;
++    background:var(--bg2);padding:16px 14px 14px;
+     display:flex;align-items:center;gap:10px;
+-    border-bottom:1px solid var(--b);margin-top:0!important;margin-bottom:4px!important;
++    border-bottom:1px solid var(--border);margin-top:0!important;margin-bottom:6px!important;
+ }
+-.sidebar-logo span{font-size:.92rem;font-weight:700;color:var(--t);}
++.sidebar-logo span{font-size:.92rem;font-weight:700;color:var(--text);}
++.status-dot{width:8px;height:8px;border-radius:50%;margin-left:auto;flex-shrink:0;}
+ 
+-/* ── New Chat button ── */
++/* New Chat button */
+ [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]{
+     opacity:1!important;height:auto!important;position:relative!important;margin-top:0!important;
+-    background:transparent!important;border:1.5px solid var(--b)!important;color:var(--t)!important;
+-    font-weight:600!important;border-radius:22px!important;padding:9px 16px!important;
++    background:transparent!important;border:1.5px solid var(--border)!important;color:var(--text)!important;
++    font-weight:600!important;border-radius:22px!important;padding:10px 18px!important;
+     justify-content:center!important;font-size:.84rem!important;
+-    transition:all .2s ease!important;
++    transition:var(--transition)!important;
+ }
+ [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:hover{
+-    background:var(--gl)!important;border-color:var(--g)!important;color:var(--g)!important;
++    background:var(--green-light)!important;border-color:var(--green)!important;color:var(--green)!important;
+ }
+ 
+-/* ── Sidebar nav buttons — invisible overlay ── */
++/* Sidebar nav buttons — invisible overlay technique */
+ [data-testid="stSidebar"] [data-testid="stButton"]{margin:0!important;padding:0!important;}
+ [data-testid="stSidebar"] [data-testid="stButton"] button{
+     width:100%!important;background:transparent!important;border:none!important;
+-    padding:0!important;margin:0!important;min-height:0!important;height:32px!important;
++    padding:0!important;margin:0!important;min-height:0!important;height:34px!important;
+     opacity:0!important;cursor:pointer!important;position:relative!important;
+-    margin-top:-32px!important;z-index:2!important;
++    margin-top:-34px!important;z-index:2!important;
+ }
+ 
+ /* Section headers */
+-.nav-sec{font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;
+-    color:var(--tl);font-weight:600;padding:20px 14px 8px;margin:0;}
++.nav-sec{
++    font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;
++    color:var(--text-light);font-weight:600;padding:22px 14px 8px;margin:0;
++}
+ 
+ /* Fixed user card */
+-.user-card{position:fixed!important;bottom:0;left:0;width:270px;
+-    background:var(--bg2);border-top:1px solid var(--b);border-right:1px solid var(--b);
+-    padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:999;}
+-.user-av{width:34px;height:34px;border-radius:50%;background:var(--gl);color:var(--g);
+-    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;flex-shrink:0;}
+-.user-nm{font-size:.84rem;font-weight:600;color:var(--t);line-height:1.2;}
+-.user-pl{font-size:.68rem;color:var(--tl);}
++.user-card{
++    position:fixed!important;bottom:0;left:0;width:280px;
++    background:var(--bg2);border-top:1px solid var(--border);border-right:1px solid var(--border);
++    padding:14px 16px;display:flex;align-items:center;gap:10px;z-index:999;
++}
++.user-av{
++    width:36px;height:36px;border-radius:50%;background:var(--green-light);color:var(--green);
++    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;flex-shrink:0;
++}
++.user-nm{font-size:.84rem;font-weight:600;color:var(--text);line-height:1.3;}
++.user-pl{font-size:.68rem;color:var(--text-light);}
+ 
+ /* Delete button in recents */
+-.del-btn{display:flex;align-items:center;justify-content:center;width:22px;height:22px;
+-    border-radius:4px;cursor:pointer;color:var(--tl);transition:all .15s;flex-shrink:0;}
++.del-btn{
++    display:flex;align-items:center;justify-content:center;width:24px;height:24px;
++    border-radius:6px;cursor:pointer;color:var(--text-light);transition:var(--transition);
++    margin-top:5px;
++}
+ .del-btn:hover{background:#fef2f2;color:#ef4444;}
+ 
+-/* ═══ MAIN AREA ═══ */
+-
+-/* ── Hero / Landing ── */
+-.hero-emoji{font-size:4.5rem;line-height:1;text-align:center;margin-bottom:4px;color:var(--g);}
+-.hero-title{text-align:center;font-size:1.6rem;font-weight:700;color:var(--t);margin-bottom:4px;line-height:1.3;}
+-.hero-sub{text-align:center;font-size:.92rem;color:var(--tm);margin-bottom:24px;line-height:1.5;}
++/* ═══════════════════════════════════════════
++   HERO — LANDING PAGE
++   ═══════════════════════════════════════════ */
++.hero-spacer{height:16vh;}
++.hero-section{text-align:center;padding:0 20px;}
++.hero-icon{font-size:4rem;line-height:1;margin-bottom:8px;color:var(--green);}
++.hero-title{
++    font-size:1.8rem;font-weight:700;color:var(--text);margin:0 0 8px;line-height:1.3;
++}
++.hero-sub{
++    font-size:.92rem;color:var(--text-mid);margin:0 0 28px;line-height:1.6;
++    max-width:500px;margin-left:auto;margin-right:auto;
++}
+ 
+-/* ── Suggestion pills — styled like the demo ── */
+-.suggestion-pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0 16px;}
++/* Suggestion pills */
++.suggestion-pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0 20px;}
+ .suggestion-pills [data-testid="stButton"] button{
+-    background:var(--bg)!important;border:1.5px solid var(--b)!important;
+-    border-radius:22px!important;color:var(--tm)!important;font-size:.84rem!important;
++    background:var(--bg)!important;border:1.5px solid var(--border)!important;
++    border-radius:22px!important;color:var(--text-mid)!important;font-size:.82rem!important;
+     font-weight:500!important;padding:10px 18px!important;white-space:nowrap!important;
+-    justify-content:center!important;transition:all .2s ease!important;
++    justify-content:center!important;transition:var(--transition)!important;
+     opacity:1!important;height:auto!important;position:relative!important;margin-top:0!important;
+-    box-shadow:0 1px 3px rgba(0,0,0,.04)!important;
++    box-shadow:var(--shadow-sm)!important;
+ }
+ .suggestion-pills [data-testid="stButton"] button:hover{
+-    border-color:var(--g)!important;color:var(--g)!important;background:var(--gl)!important;
+-    box-shadow:0 2px 8px rgba(26,122,76,.1)!important;transform:translateY(-1px)!important;
++    border-color:var(--green)!important;color:var(--green)!important;background:var(--green-light)!important;
++    box-shadow:var(--shadow-green)!important;transform:translateY(-1px)!important;
+ }
+ 
+-/* ── Top bar ── */
+-.top-bar{display:flex;align-items:center;justify-content:space-between;
+-    padding:12px 28px;border-bottom:1px solid var(--bl);background:var(--bg);}
+-.top-bar-l{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:600;color:var(--t);}
+-.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;}
++/* Powered-by footer */
++.powered-by{text-align:center;font-size:.72rem;color:var(--text-light);padding:10px 0;margin-top:12px;}
++.powered-by a{color:var(--green);text-decoration:none;font-weight:500;}
+ 
+-/* ── Mode pill ── */
+-.mode-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;
+-    border-radius:18px;background:var(--gl);color:var(--g);font-size:.78rem;
+-    font-weight:600;margin:8px 0 0 28px;}
+-
+-/* ═══ CHAT INPUT — premium capsule ═══ */
+-[data-testid="stChatInput"]{max-width:720px!important;margin:0 auto!important;padding:0 16px 16px!important;}
+-[data-testid="stChatInput"] textarea{
+-    border-radius:24px!important;border:1.5px solid var(--b)!important;
+-    background:var(--bg)!important;font-size:.9rem!important;
+-    padding:12px 20px!important;min-height:44px!important;
+-    box-shadow:0 1px 6px rgba(0,0,0,.04)!important;
+-    transition:border-color .2s,box-shadow .2s!important;
++/* ═══════════════════════════════════════════
++   TOP BAR
++   ═══════════════════════════════════════════ */
++.top-bar{
++    display:flex;align-items:center;justify-content:space-between;
++    padding:14px 28px;border-bottom:1px solid var(--border-light);background:var(--bg);
+ }
+-[data-testid="stChatInput"] textarea:focus{
+-    border-color:var(--g)!important;box-shadow:0 0 0 3px rgba(26,122,76,.08)!important;
+-}
+-[data-testid="stChatInput"]>div{border:none!important;background:transparent!important;border-radius:24px!important;}
+-[data-testid="stChatInput"] button{
+-    background:var(--g)!important;color:#fff!important;border:none!important;
+-    border-radius:50%!important;width:32px!important;height:32px!important;min-width:32px!important;
++.top-bar-l{display:flex;align-items:center;gap:10px;font-size:.92rem;font-weight:600;color:var(--text);}
++.mode-indicator{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:500;}
++.dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
++
++/* Mode pill badge */
++.mode-pill{
++    display:inline-flex;align-items:center;gap:6px;padding:6px 16px;
++    border-radius:20px;background:var(--green-light);color:var(--green);font-size:.78rem;
++    font-weight:600;margin:12px 0 0 28px;
+ }
+-[data-testid="stBottom"]{background:var(--bg)!important;border-top:1px solid var(--bl)!important;}
+-[data-testid="stBottomBlockContainer"]{padding:0!important;max-width:100%!important;}
+ 
+-/* ═══ TEXT INPUT — capsule ═══ */
++/* ═══════════════════════════════════════════
++   FORM CONTAINER
++   ═══════════════════════════════════════════ */
++.form-container{padding:8px 0 24px;}
++
++/* ═══════════════════════════════════════════
++   TEXT INPUT — PILL STYLE
++   ═══════════════════════════════════════════ */
+ [data-testid="stTextInput"] input{
+-    background:var(--ib)!important;border:1.5px solid var(--b)!important;
+-    border-radius:var(--r)!important;padding:14px 22px!important;font-size:.92rem!important;
+-    box-shadow:0 1px 4px rgba(0,0,0,.03)!important;transition:border-color .2s,box-shadow .2s!important;
++    background:var(--bg3)!important;border:1.5px solid var(--border)!important;
++    border-radius:var(--radius)!important;padding:14px 22px!important;font-size:.92rem!important;
++    box-shadow:var(--shadow-sm)!important;transition:var(--transition)!important;
++    color:var(--text)!important;
+ }
+ [data-testid="stTextInput"] input:focus{
+-    border-color:var(--g)!important;box-shadow:0 0 0 3px rgba(26,122,76,.08)!important;
++    border-color:var(--green)!important;box-shadow:0 0 0 3px var(--green-glow)!important;
++    background:var(--bg)!important;
+ }
+ [data-testid="stTextInput"]>div{border:none!important;background:transparent!important;}
+ [data-testid="stTextInput"] label{display:none!important;}
+ 
+-/* Green primary buttons */
++/* Text area */
++[data-testid="stTextArea"] textarea{
++    background:var(--bg3)!important;border:1.5px solid var(--border)!important;
++    border-radius:var(--radius-sm)!important;padding:14px 18px!important;font-size:.88rem!important;
++    transition:var(--transition)!important;
++}
++[data-testid="stTextArea"] textarea:focus{
++    border-color:var(--green)!important;box-shadow:0 0 0 3px var(--green-glow)!important;
++}
++[data-testid="stTextArea"] label{color:var(--text-mid)!important;font-weight:500!important;font-size:.82rem!important;}
++
++/* Select box */
++[data-testid="stSelectbox"] label{color:var(--text-mid)!important;font-weight:500!important;font-size:.82rem!important;}
++[data-testid="stSelectbox"]>div>div{
++    border-radius:var(--radius-sm)!important;border-color:var(--border)!important;
++}
++
++/* ═══════════════════════════════════════════
++   GREEN PRIMARY BUTTONS
++   ═══════════════════════════════════════════ */
+ .main [data-testid="stButton"] button[kind="primary"]{
+-    background:var(--g)!important;color:#fff!important;border:none!important;
+-    border-radius:22px!important;font-weight:600!important;padding:10px 24px!important;
++    background:var(--green)!important;color:#fff!important;border:none!important;
++    border-radius:22px!important;font-weight:600!important;padding:11px 24px!important;
+     opacity:1!important;height:auto!important;position:relative!important;margin-top:0!important;
+-    box-shadow:0 2px 6px rgba(26,122,76,.15)!important;transition:all .2s ease!important;
++    box-shadow:var(--shadow-green)!important;transition:var(--transition)!important;
++    font-size:.88rem!important;letter-spacing:.01em!important;
+ }
+ .main [data-testid="stButton"] button[kind="primary"]:hover{
+-    background:var(--gh)!important;box-shadow:0 4px 12px rgba(26,122,76,.2)!important;
++    background:var(--green-hover)!important;
++    box-shadow:0 4px 14px rgba(26,122,76,.2)!important;
+     transform:translateY(-1px)!important;
+ }
+ .main [data-testid="stButton"] button{
+     opacity:1!important;height:auto!important;position:relative!important;margin-top:0!important;
+ }
+ 
+-/* ═══ RESULT CARDS ═══ */
++/* ═══════════════════════════════════════════
++   RESULT CARDS — METRICS
++   ═══════════════════════════════════════════ */
+ .metric-row{display:flex;gap:14px;margin:1rem 0;}
+-.metric-card{flex:1;text-align:center;padding:16px;border-radius:14px;background:var(--gl);
+-    border:1px solid #d1f0df;transition:transform .15s;}
+-.metric-card:hover{transform:translateY(-2px);}
+-.metric-val{font-size:1.4rem;font-weight:700;color:var(--g);}
+-.metric-lbl{font-size:.72rem;color:var(--tm);margin-top:3px;font-weight:500;}
+-
+-.review-box{background:var(--bl);border-left:3px solid var(--g);border-radius:0 var(--rs) var(--rs) 0;
+-    padding:1.2rem 1.5rem;font-size:.92rem;line-height:1.8;color:var(--t);margin:1rem 0;
+-    font-style:italic;}
+-
+-.rec-card{display:flex;align-items:flex-start;gap:14px;padding:16px;border-radius:14px;
+-    border:1.5px solid var(--b);margin-bottom:8px;transition:all .2s ease;background:var(--bg);}
+-.rec-card:hover{border-color:var(--g);box-shadow:0 2px 12px rgba(26,122,76,.06);}
+-.rec-rank{width:34px;height:34px;min-width:34px;border-radius:10px;background:var(--g);
+-    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;}
+-.rec-name{font-weight:600;font-size:.92rem;color:var(--t);}
+-.rec-cat{display:inline-block;padding:2px 10px;border-radius:6px;background:var(--gb);
+-    color:#1a7a4c;font-size:.72rem;font-weight:600;margin-top:2px;}
+-.rec-desc{font-size:.82rem;color:var(--tm);margin-top:6px;line-height:1.5;}
+-
+-.sec-hd{display:flex;align-items:center;gap:10px;margin:1.5rem 0 1rem;color:var(--t);}
+-
+-/* ═══ CHAT MESSAGES ═══ */
+-[data-testid="stChatMessage"]{max-width:720px;margin:0 auto;background:transparent!important;border:none!important;}
++.metric-card{
++    flex:1;text-align:center;padding:20px 16px;border-radius:var(--radius-md);
++    background:var(--green-light);border:1px solid var(--green-lighter);
++    transition:var(--transition);
++}
++.metric-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-green);}
++.metric-val{font-size:1.4rem;font-weight:700;color:var(--green);}
++.metric-lbl{font-size:.72rem;color:var(--text-mid);margin-top:4px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
++
++/* Review box */
++.review-box{
++    background:var(--bg3);border-left:4px solid var(--green);
++    border-radius:0 var(--radius-sm) var(--radius-sm) 0;
++    padding:1.4rem 1.8rem;font-size:.92rem;line-height:1.8;color:var(--text);margin:1rem 0;
++    font-style:italic;position:relative;
++}
++.review-quote{
++    font-size:2rem;color:var(--green);opacity:.3;position:absolute;top:8px;left:12px;
++    font-style:normal;line-height:1;
++}
++
++/* ═══════════════════════════════════════════
++   RECOMMENDATION CARDS
++   ═══════════════════════════════════════════ */
++.results-header{
++    display:flex;align-items:center;gap:8px;padding:4px 0 12px;
++    font-size:.82rem;color:var(--text-light);font-weight:500;
++}
++.rec-card{
++    display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:var(--radius-md);
++    border:1.5px solid var(--border);margin-bottom:10px;
++    transition:var(--transition);background:var(--bg);
++}
++.rec-card:hover{border-color:var(--green);box-shadow:0 4px 16px rgba(26,122,76,.06);transform:translateY(-1px);}
++.rec-rank{
++    width:36px;height:36px;min-width:36px;border-radius:10px;background:var(--green);
++    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.84rem;
++    flex-shrink:0;
++}
++.rec-body{flex:1;min-width:0;}
++.rec-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
++.rec-name{font-weight:600;font-size:.92rem;color:var(--text);}
++.rec-cat{
++    display:inline-block;padding:2px 10px;border-radius:6px;background:var(--green-lighter);
++    color:var(--green);font-size:.7rem;font-weight:600;
++}
++.rec-desc{font-size:.82rem;color:var(--text-mid);margin-top:6px;line-height:1.6;}
++
++/* ═══════════════════════════════════════════
++   CHAT MESSAGES
++   ═══════════════════════════════════════════ */
++[data-testid="stChatMessage"]{max-width:740px;margin:0 auto;background:transparent!important;border:none!important;padding:4px 0!important;}
+ [data-testid="stChatMessage"] [data-testid="stChatMessageAvatarCustom"],
+ [data-testid="stChatMessage"] [data-testid="stChatMessageAvatarUser"],
+ [data-testid="stChatMessage"] [data-testid="stChatMessageAvatarAssistant"],
+ [data-testid="stChatMessage"]>div:first-child>div:first-child{display:none!important;}
+ 
+-/* ── Powered-by footer ── */
+-.powered-by{text-align:center;font-size:.72rem;color:var(--tl);padding:8px 0;margin-top:8px;}
+-.powered-by a{color:var(--g);text-decoration:none;font-weight:500;}
++.chat-msg{display:flex;gap:12px;align-items:flex-start;}
++.chat-avatar{flex-shrink:0;margin-top:2px;}
++.chat-text{font-size:.9rem;line-height:1.75;color:var(--text);}
++.chat-thinking{
++    display:flex;align-items:center;gap:8px;
++    font-size:.85rem;color:var(--text-light);
++}
++.thinking-dots{display:flex;gap:4px;align-items:center;}
++.thinking-dots span{
++    width:6px;height:6px;border-radius:50%;background:var(--green);opacity:.4;
++    animation:dotPulse 1.4s infinite ease-in-out;
++}
++.thinking-dots span:nth-child(2){animation-delay:.2s;}
++.thinking-dots span:nth-child(3){animation-delay:.4s;}
++@keyframes dotPulse{
++    0%,80%,100%{opacity:.4;transform:scale(1);}
++    40%{opacity:1;transform:scale(1.2);}
++}
+ 
+-[data-testid="stRadio"]{display:none!important;}
+-hr{display:none!important;}
++/* Chat empty state */
++.chat-empty{text-align:center;padding:60px 20px;color:var(--text-light);}
++.chat-empty-icon{font-size:3rem;margin-bottom:12px;opacity:.5;}
++.chat-empty-title{font-size:1.1rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;}
++.chat-empty-sub{font-size:.85rem;max-width:360px;margin:0 auto;line-height:1.5;}
+ 
+-/* ═══ RESPONSIVE — MOBILE ═══ */
++/* Chat input — premium capsule */
++[data-testid="stChatInput"]{max-width:740px!important;margin:0 auto!important;padding:0 16px 16px!important;}
++[data-testid="stChatInput"] textarea{
++    border-radius:24px!important;border:1.5px solid var(--border)!important;
++    background:var(--bg)!important;font-size:.9rem!important;
++    padding:13px 20px!important;min-height:44px!important;
++    box-shadow:var(--shadow-sm)!important;
++    transition:var(--transition)!important;
++}
++[data-testid="stChatInput"] textarea:focus{
++    border-color:var(--green)!important;box-shadow:0 0 0 3px var(--green-glow)!important;
++}
++[data-testid="stChatInput"]>div{border:none!important;background:transparent!important;border-radius:24px!important;}
++[data-testid="stChatInput"] button{
++    background:var(--green)!important;color:#fff!important;border:none!important;
++    border-radius:50%!important;width:34px!important;height:34px!important;min-width:34px!important;
++    transition:var(--transition)!important;
++}
++[data-testid="stChatInput"] button:hover{background:var(--green-hover)!important;}
++[data-testid="stBottom"]{background:var(--bg)!important;border-top:1px solid var(--border-light)!important;}
++[data-testid="stBottomBlockContainer"]{padding:0!important;max-width:100%!important;}
++
++/* ═══════════════════════════════════════════
++   PREFERENCES PAGE
++   ═══════════════════════════════════════════ */
++.pref-header{
++    display:flex;align-items:center;gap:10px;margin:1.5rem 0 .5rem;
++    color:var(--text);font-size:1.1rem;font-weight:600;
++}
++.pref-section{
++    font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;
++    color:var(--text-light);font-weight:600;margin:24px 0 8px;padding-bottom:4px;
++    border-bottom:1px solid var(--border-light);
++}
++
++/* ═══════════════════════════════════════════
++   EXPANDER
++   ═══════════════════════════════════════════ */
++[data-testid="stExpander"]{
++    border:1px solid var(--border)!important;border-radius:var(--radius-sm)!important;
++    overflow:hidden;
++}
++[data-testid="stExpander"] summary{
++    padding:12px 16px!important;font-size:.88rem!important;font-weight:500!important;
++}
++
++/* ═══════════════════════════════════════════
++   MOBILE RESPONSIVE — TABLET
++   ═══════════════════════════════════════════ */
+ @media(max-width:768px){
+-    /* Sidebar collapses to overlay */
+     [data-testid="stSidebar"]{width:260px!important;}
+     .user-card{width:260px;}
+ 
+-    /* Main content full-width */
+-    [data-testid="stChatInput"]{max-width:100%!important;padding:0 8px 12px!important;}
+-    [data-testid="stChatMessage"]{max-width:100%!important;padding:0 4px!important;}
++    [data-testid="stChatInput"]{max-width:100%!important;padding:0 10px 12px!important;}
++    [data-testid="stChatMessage"]{max-width:100%!important;padding:2px 4px!important;}
+ 
+-    /* Hero section */
+-    .hero-emoji{font-size:3rem;}
+-    .hero-title{font-size:1.3rem;}
+-    .hero-sub{font-size:.82rem;padding:0 12px;}
++    .hero-spacer{height:10vh;}
++    .hero-icon{font-size:3rem;}
++    .hero-title{font-size:1.4rem;}
++    .hero-sub{font-size:.84rem;padding:0 12px;}
+ 
+-    /* Suggestion pills stack vertically */
+     .suggestion-pills [data-testid="stHorizontalBlock"]{
+         flex-direction:column!important;gap:8px!important;
+     }
+@@ -311,36 +474,38 @@ hr{display:none!important;}
+         font-size:.78rem!important;padding:10px 14px!important;
+     }
+ 
+-    /* Forms use full width */
+     .main [data-testid="stHorizontalBlock"]{
+         flex-direction:column!important;gap:8px!important;
+     }
+ 
+-    /* Top bar compact */
+-    .top-bar{padding:8px 12px;}
+-    .top-bar-l span{font-size:.82rem;}
+-    .mode-pill{margin:4px 0 0 12px;font-size:.7rem;}
++    .top-bar{padding:10px 14px;}
++    .top-bar-l span{font-size:.84rem;}
++    .mode-pill{margin:6px 0 0 14px;font-size:.72rem;}
+ 
+-    /* Cards */
+     .metric-row{flex-direction:row;gap:8px;}
+-    .metric-card{padding:10px;}
++    .metric-card{padding:14px 10px;}
+     .metric-val{font-size:1.1rem;}
+-    .rec-card{padding:12px;flex-direction:column;}
+-    .rec-rank{width:28px;height:28px;min-width:28px;font-size:.72rem;}
+-    .review-box{padding:.8rem 1rem;font-size:.84rem;}
++    .rec-card{padding:14px;}
++    .rec-rank{width:30px;height:30px;min-width:30px;font-size:.76rem;}
++    .review-box{padding:1rem 1.2rem;font-size:.86rem;}
+ 
+-    /* Text input */
+     [data-testid="stTextInput"] input{padding:12px 16px!important;font-size:.86rem!important;}
+ }
+ 
++/* ═══════════════════════════════════════════
++   MOBILE RESPONSIVE — PHONE
++   ═══════════════════════════════════════════ */
+ @media(max-width:480px){
+-    .hero-emoji{font-size:2.5rem;}
+-    .hero-title{font-size:1.1rem;}
++    .hero-spacer{height:6vh;}
++    .hero-icon{font-size:2.5rem;}
++    .hero-title{font-size:1.15rem;}
+     .hero-sub{font-size:.78rem;}
+     .metric-row{flex-direction:column;gap:6px;}
+-    .metric-card{padding:8px;}
++    .metric-card{padding:10px;}
+     .suggestion-pills [data-testid="stButton"] button{font-size:.74rem!important;}
+     .top-bar-l span{display:none;}
++    .rec-card{flex-direction:column;gap:10px;}
++    .chat-text{font-size:.84rem;}
+ }
+ </style>
+ """
+diff --git a/solution_paper/NaijaReview_AI_Solution_Paper.md b/solution_paper/NaijaReview_AI_Solution_Paper.md
+deleted file mode 100644
+index 05ebd12..0000000
+--- a/solution_paper/NaijaReview_AI_Solution_Paper.md
++++ /dev/null
+@@ -1,404 +0,0 @@
+-# NaijaReview AI: A Hybrid Agentic System for User Modeling and Personalized Recommendation
+-
+-**Team Cerebral**
+-DSN × BCT Data & AI Summit Hackathon 3.0 — May 2026
+-
+----
+-
+-## Abstract
+-
+-We present **NaijaReview AI**, an LLM-powered multi-agent system that models users as dynamic, context-sensitive individuals and produces both simulated reviews and hyper-personalized recommendations. Our system addresses two tasks: **(A)** predicting ratings and generating stylistically faithful reviews for unseen items, and **(B)** delivering personalized recommendations with cold-start robustness, cross-domain transfer, and contextual reasoning. The architecture combines SVD collaborative filtering with Bayesian shrinkage for rating prediction (RMSE 0.956), vocabulary-forced LLM generation for behavioural fidelity in review simulation (BERTScore 0.901, ROUGE-1 0.339), and a multi-signal retrieval pipeline fusing co-occurrence CF with semantic search for recommendation (NDCG@10 0.835, Hit Rate@10 0.933). A key contribution is our **vocabulary-forcing technique** for short-form review generation: on datasets where 68% of reviews contain fewer than 15 words, constraining the LLM to reuse the user's exact lexicon yields +21% relative ROUGE improvement over baseline few-shot prompting. The entire system is contextualized for Nigerian users with Pidgin English adaptation, cultural references, and regional preference awareness.
+-
+-**Keywords:** LLM agents, recommendation systems, user modeling, collaborative filtering, SVD, Nigerian NLP, vocabulary forcing, cold-start recommendation
+-
+----
+-
+-## 1. Introduction
+-
+-### 1.1 Motivation
+-
+-Online review platforms are among the richest sources of human behavioural data. Every rating, every review is a signal — a window into preference, context, and decision-making. Yet most AI systems still treat users as static profiles rather than dynamic, context-sensitive agents. This challenge asks us to change that: build agents that understand how people behave, what they want, and what they'll choose next.
+-
+-### 1.2 Problem Statement
+-
+-**Task A — User Modeling:** Given a user's review history (N−1 reviews), simulate the rating and written review for a held-out unseen item. The simulation must capture tone, rating behaviour, vocabulary, and contextual nuance — not just generate plausible text, but text that sounds like *that specific user*.
+-
+-**Task B — Recommendation:** Given a user's interaction history, recommend K personalized items. The system must handle cold-start scenarios (new users with minimal history), cross-domain recommendation (transferring preferences from books to electronics, for example), and multi-turn conversational retrieval where the user refines their needs through dialogue.
+-
+-### 1.3 Key Contributions
+-
+-1. **SVD + Bayesian bias rating prediction** — a principled approach that outperforms XGBoost at inference time due to feature distribution alignment (Section 3.3)
+-2. **Vocabulary-forcing for short-form reviews** — adapting lexical-constrained prompting to short-review settings, yielding +21% ROUGE-1 improvement on 9-word median review datasets (Section 3.4)
+-3. **Multi-signal retrieval with cold-start fallback** — combining co-occurrence CF, semantic search, and LLM-based preference synthesis for robust recommendation across warm and cold scenarios (Section 4)
+-4. **Nigerian contextualization** — language-aware persona building with Pidgin English adaptation (Section 5)
+-
+----
+-
+-## 2. System Architecture
+-
+-### 2.1 Overview
+-
+-NaijaReview AI follows a modular, agent-based architecture where specialized agents collaborate across tasks:
+-
+-```
+-┌─────────────────────────────────────────────────────────┐
+-│                  Streamlit Web Interface                 │
+-├─────────────────────────────────────────────────────────┤
+-│                    FastAPI Backend                       │
+-├──────────────────────┬──────────────────────────────────┤
+-│    Task A Agents     │        Task B Agents             │
+-│  ┌────────────────┐  │  ┌────────────────────────────┐  │
+-│  │ Persona Builder │  │  │ Preference Extractor (LLM) │  │
+-│  │ Rating Predictor│  │  │ Multi-Signal Retriever     │  │
+-│  │  (SVD + Bias)   │  │  │  ├─ Co-occurrence CF       │  │
+-│  │ Review Generator│  │  │  ├─ Semantic Search         │  │
+-│  │ (Vocab-Forcing) │  │  │  └─ Category Matcher        │  │
+-│  └────────────────┘  │  │ Cold-Start Handler (LLM)    │  │
+-│                      │  │ Conversational Engine        │  │
+-│                      │  └────────────────────────────┘  │
+-├──────────────────────┴──────────────────────────────────┤
+-│              Shared Infrastructure                       │
+-│  ChromaDB (9K items) · SentenceTransformers · LLM Client│
+-│  Memory Store · Embedding Engine (all-MiniLM-L6-v2)     │
+-└─────────────────────────────────────────────────────────┘
+-```
+-
+-### 2.2 LLM Client with Circuit Breaker
+-
+-We use a dual-provider LLM strategy: **Groq (Llama-3.3-70B-Versatile)** as primary and **OpenAI GPT-4o-mini** as fallback. A critical engineering insight was implementing a **circuit-breaker pattern**: after a single Groq failure (typically when the 100K daily token limit is reached), all subsequent calls route directly to OpenAI. This eliminates the ~3× latency penalty from repeated failed Groq requests that we observed in early experiments.
+-
+-### 2.3 Embedding and Retrieval Infrastructure
+-
+-- **Embedding Model:** `all-MiniLM-L6-v2` (384-dimensional vectors, local CPU inference)
+-- **Vector Store:** ChromaDB with 9,000 indexed items, using concatenated metadata (name, category, description, average rating) for rich semantic representations
+-- **Memory Store:** JSON-backed persistent user profiles that cache persona analyses and style fingerprints, avoiding redundant LLM calls across sessions
+-
+----
+-
+-## 3. Task A: User Modeling
+-
+-### 3.1 Pipeline Flow
+-
+-```
+-User History → [Persona Builder] → [Rating Predictor] → [Review Generator] → (rating, review)
+-  (N-1 reviews)   (LLM tone +        (SVD + bias         (vocab-forced         simulated
+-                    style stats)        blend)              LLM generation)       output
+-```
+-
+-### 3.2 Persona Building: Capturing Behavioural Fingerprints
+-
+-The PersonaBuilder agent extracts a comprehensive **behavioural fingerprint** from user history:
+-
+-| Signal | How It's Computed | Why It Matters |
+-|---|---|---|
+-| **Writing Style** | Avg review length, vocabulary richness, punctuation density, emoji frequency, capitalization ratio | Controls generated review format |
+-| **Tone** | LLM classifies from review samples (e.g. "harsh critic", "enthusiastic supporter") | Constrains sentiment in generation |
+-| **Rating Distribution** | Mean, std, skewness of past ratings | Anchors rating prediction |
+-| **Category Preferences** | Ranked categories by interaction frequency | Enables cross-domain reasoning |
+-
+-Personas are computed once and cached, reducing token consumption by ~40% on repeated evaluations.
+-
+-### 3.3 Rating Prediction: SVD + Bayesian Bias
+-
+-#### The XGBoost Distribution Mismatch (A Key Finding)
+-
+-Our XGBoost model achieves **0.613 RMSE in training** on 22 engineered features. However, at inference it receives *averaged user-history* features — a fundamentally different distribution. This **increased** inference RMSE from 0.945 to 1.193. We document this as a cautionary finding: strong training metrics do not guarantee inference performance when feature distributions shift.
+-
+-#### Our Approach: Two-Component Blend
+-
+-We blend two signals: **(1) Bayesian shrinkage bias** (weight 0.6) — `global_mean + user_bias + item_bias`, with biases shrunk toward the global mean (λ=10) to handle sparse users; and **(2) SVD collaborative filtering** (weight 0.4) — truncated SVD with 50 latent factors on a sparse residual matrix (4,500 users × 7,000 items). At prediction time, the SVD residual `dot(user_vector, item_vector)` is added back to the bias prediction. An optional category interaction blends the user's category-specific mean (20% weight) when ≥2 same-category ratings exist.
+-
+-### 3.4 Review Generation: Vocabulary-Forcing for Behavioural Fidelity
+-
+-#### The Short-Review Problem
+-
+-Our dataset analysis revealed a critical challenge: **67.9% of reviews contain fewer than 15 words** (median: 9 words). This transforms ROUGE evaluation from a summarization problem into a *precision* problem:
+-
+-| Words Matched (out of 9) | ROUGE-1 | Interpretation |
+-|:---:|:---:|:---|
+-| 2 | 0.22 | Poor |
+-| 3 | 0.33 | Baseline |
+-| 4 | 0.44 | Good |
+-| 5 | 0.56 | Excellent |
+-
+-A single additional word match shifts ROUGE-1 by ~0.11. This means vocabulary selection — not length matching — becomes the primary lever for improving generation quality.
+-
+-#### Vocabulary-Forcing Technique
+-
+-Our prompting strategy forces lexical alignment through three mechanisms:
+-
+-1. **Must-Use Word List:** We extract the user's top 8 most frequent content words (frequency ≥ 2, stopwords removed) and explicitly mandate the LLM include ≥ 4 of them in the generated review
+-2. **Exact Phrase Templates:** Complete short reviews (4–15 words) from the user's history are provided as *copy templates* — the LLM restructures them for the new product rather than generating from scratch
+-3. **Same-Category Prioritization:** When same-category reviews exist, they become the primary template, maximizing vocabulary overlap with likely ground truth
+-
+-#### Vocabulary-Forcing Impact
+-
+-| Prompting Strategy | ROUGE-1 | Relative Gain |
+-|:---|:---:|:---:|
+-| Generic few-shot only | 0.280 | baseline |
+-| + Category matching | 0.324 | +15.7% |
+-| + Vocabulary forcing + templates | 0.339 | **+21.1%** |
+-
+-#### Behavioural Fidelity Enforcement
+-
+-Beyond vocabulary, we enforce behavioural consistency:
+-- **Rating lockdown:** The prompt mandates `rating must be EXACTLY {predicted_rating}` — preventing the LLM from overriding the statistical prediction
+-- **Length matching:** Target word count is set to the user's computed average, with post-processing truncation at sentence boundaries if the LLM exceeds 1.5× target
+-- **Tone persistence:** The persona's tone classification (e.g. "casual conversationalist") is injected into the system prompt, constraining the register of generated text
+-
+----
+-
+-## 4. Task B: Recommendation
+-
+-Our recommendation pipeline implements **agentic workflows that reason before recommending** — the LLM first extracts structured preferences from user history, then multiple retrieval signals are fused and scored before final ranking.
+-
+-### 4.1 Multi-Signal Retrieval Pipeline
+-
+-```
+-User Reviews → [Preference Extraction] → [Multi-Signal Retrieval] → [Composite Scoring] → Top-K
+-                     (LLM summary)         ├─ Co-occurrence CF (50 candidates)
+-                                           ├─ Semantic Search (60 candidates)
+-                                           └─ Category Boost
+-```
+-
+-**Signal 1 — Co-occurrence Collaborative Filtering:**
+-For each item the user has reviewed, we identify all other items co-reviewed by the same users across the full corpus (3,024 items in the co-occurrence index). Items co-occurring with multiple of the target user's items receive multiplicative score boosts. This signal alone drove **NDCG from 0.195 → 0.810** — the single largest improvement in our entire development process.
+-
+-**Signal 2 — Semantic Vector Search:**
+-The user's preference profile (LLM-summarized from reviews) is embedded and queried against the ChromaDB item index. The top-60 results by cosine similarity provide cross-domain discovery — items semantically similar to the user's interests but outside their reviewed categories.
+-
+-**Signal 3 — Category Matching:**
+-Items from the user's top-interacted categories receive a bonus score, ensuring recommendations respect demonstrated domain preferences.
+-
+-The final composite score is: `score(i) = α·CF(i) + β·semantic(i) + γ·category(i)`, with top-K selected.
+-
+-### 4.2 Cold-Start Handling
+-
+-Cold-start users (those with ≤ 3 reviews) lack sufficient data for reliable co-occurrence CF. Our system handles this through a **graceful degradation strategy**:
+-
+-1. **Semantic-first retrieval:** When co-occurrence produces < 20 candidates, semantic search weight increases to compensate
+-2. **LLM preference synthesis:** The LLM analyzes even a single review to extract preference signals (e.g., "this user values durability and price, mentioned Nigerian brands positively")
+-3. **Category-based popularity fallback:** When both CF and semantic signals are weak, highly-rated items from the user's single demonstrated category are surfaced
+-4. **Profile-based generation:** For zero-history users, the system uses the user's persona metadata (region, demographic) to generate initial candidates through LLM reasoning
+-
+-Our Task B evaluation users had only 4 reviews each (from a 60/40 split of ~6 total reviews) — effectively a cold-start scenario. The system achieved **Hit Rate@10 of 0.933**, with minimal observed degradation compared to users with richer histories, suggesting that our graceful degradation strategy bridges the cold-start gap effectively. We note that with 15 evaluation users, variance is non-trivial, and a larger-scale evaluation would be needed to confirm statistical significance.
+-
+-### 4.3 Cross-Domain Recommendation
+-
+-Our semantic search inherently supports cross-domain transfer because:
+-- Item embeddings capture *conceptual* similarity, not just category membership
+-- A user who reviews Nigerian literature positively will receive semantically similar cultural products (Nigerian music, Nollywood films) even if they've never rated items in those categories
+-- The LLM preference extractor explicitly surfaces cross-domain patterns: "This user values authenticity, craftsmanship, and Nigerian cultural identity across all categories"
+-
+-### 4.4 Multi-Turn Conversational Recommendation
+-
+-The system supports conversational refinement through a chat endpoint:
+-- Users can express preferences in natural language ("I want something similar to Adichie's books but in electronics")
+-- The conversation history is maintained in the memory store
+-- Each turn refines the preference vector, producing progressively more targeted recommendations
+-
+-### 4.5 Design Decision: Why No LLM Re-Ranking
+-
+-We tested LLM-based re-ranking of candidates using Groq's Llama-3.3-70B. It consumed significant API tokens (triggering daily rate limits by user #8 of 15), added ~2s latency per user, and **did not improve NDCG** over composite scoring. The co-occurrence signal is already high-precision; LLM reasoning adds value in preference *extraction* but not in final *ranking*.
+-
+----
+-
+-## 5. Nigerian Contextualization
+-
+-Our system earns the Nigerian contextualization bonus through three levels of adaptation:
+-
+-### 5.1 Language Adaptation
+-- System prompts detect Nigerian users (via profile metadata) and instruct the LLM to use Nigerian English naturally
+-- Pidgin expressions are incorporated where contextually appropriate
+-- The system preserves the *user's own* language register — if a user writes in formal English, Pidgin is not artificially injected
+-- Regional linguistic variations are modeled for Lagos, Abuja, and Port Harcourt
+-
+-### 5.2 Cultural Preference Modeling
+-- Product recommendations consider Nigerian market realities: brand availability, pricing sensitivity, and local alternatives
+-- Food recommendations reference Nigerian cuisine (jollof rice, suya, amala) and popular chains
+-- Book recommendations include Nigerian literary canon (Achebe, Adichie, Oyeyemi)
+-- Generated reviews include culturally appropriate assessments referencing local realities
+-
+-**Example — Nigerian-adapted review generated for "Oraimo Power Bank 20000mAh":**
+-
+-> *Nigerian version:* "This powerbank too good sha, e charge fast fast. Perfect for when NEPA take light. No disappoint at all!"
+->
+-> *Generic English version:* "Great power bank, charges quickly. Good for power outages. Not disappointed."
+-
+-The difference is not cosmetic — Nigerian users recognize authentic voice immediately, and the cultural specificity ("NEPA", "sha", "fast fast") signals genuine local understanding.
+-
+-### 5.3 Persona-Aware Archetypes
+-Pre-built persona archetypes enrich generation with culturally specific behavioural priors:
+-- "Lagos Professional" — quality-focused, brand-conscious, time-constrained
+-- "University Student" — price-sensitive, tech-forward, social-media influenced
+-- "Market Trader" — practical, value-driven, community-oriented
+-
+----
+-
+-## 6. Experiments and Ablation Study
+-
+-### 6.1 Evaluation Protocol
+-
+-| Parameter | Task A | Task B |
+-|---|---|---|
+-| Users evaluated | 30 | 15 |
+-| Min reviews per user | ≥ 5 | ≥ 6 reviews, ≥ 3 unique items |
+-| Train/test split | Last review held out | 60% history / 40% test |
+-| Ground truth | Actual rating + review text | Items rated ≥ 4/5 in test set, not in history |
+-| Dataset | 59,981 reviews, 4,500 users, 7,000 items (Amazon Electronics + Yelp + Goodreads) |
+-
+-**Evaluation Integrity:** To ensure our recommendation metrics reflect genuine ranking quality, candidate items for each user excluded all previously interacted items, and ranking was performed over the full retrieval pool (not sampled positives against easy negatives). The co-occurrence index was built from training interactions only; test-set interactions were strictly withheld. We acknowledge that 15 evaluation users represents a limited sample — our reported NDCG@10 of 0.835 and HR@10 of 0.933 should be interpreted as point estimates without confidence intervals. A production evaluation would require ≥100 users with multi-seed averaging to establish statistical robustness.
+-
+-### 6.2 Ablation Results
+-
+-Each row represents a real experimental run with all metrics measured end-to-end:
+-
+-| System Variant | RMSE | ROUGE-1 | BERTScore | NDCG@10 | HR@10 |
+-|:---|:---:|:---:|:---:|:---:|:---:|
+-| Baseline (bias + XGBoost + LLM re-rank) | 0.945 | 0.280 | 0.850 | 0.195 | 0.040 |
+-| + Co-occurrence CF retrieval | 0.945 | 0.280 | 0.850 | 0.810 | 0.933 |
+-| + Binary hit rate + eval fixes | 0.945 | 0.324 | 0.903 | 0.810 | 0.933 |
+-| + XGBoost 70/30 blend (failed) | 1.193 | 0.297 | 0.878 | 0.835 | 0.933 |
+-| + Revert to pure Bayesian bias | 0.953 | 0.319 | 0.900 | 0.835 | 0.933 |
+-| + Vocabulary forcing (word list only) | 0.953 | 0.319 | 0.900 | 0.835 | 0.933 |
+-| **+ Sentence templates + SVD + circuit bkr** | **0.956** | **0.339** | **0.901** | **0.835** | **0.933** |
+-
+-### 6.3 Key Findings
+-
+-**Finding 1: Co-occurrence CF is the dominant retrieval signal.**
+-A single architectural change — adding co-occurrence collaborative filtering — improved NDCG from 0.195 to 0.810 (4.2× improvement) and Hit Rate from 0.04 to 0.933 (23× improvement). Semantic search contributes diversity but co-occurrence drives precision.
+-
+-**Finding 2: XGBoost hurts RMSE at inference due to distribution mismatch.**
+-Despite 0.613 training RMSE, XGBoost *increased* inference RMSE to 1.193 when given majority weight. The root cause: training features are per-review (actual text sentiment), but inference features are per-user averages — a fundamentally different distribution. This is a generalizable cautionary finding for practitioners using supervised models in recommendation pipelines.
+-
+-**Finding 3: Vocabulary forcing yields +21% ROUGE on short reviews.**
+-Moving from generic few-shot prompting (ROUGE-1 0.280) to vocabulary-forcing (0.339) represents a +21% relative improvement. On 9-word reviews, this corresponds to ~0.5 additional correct word matches per review.
+-
+-**Finding 4: LLM re-ranking adds cost without improving NDCG.**
+-LLM re-ranking consumed 30% of daily API budget and did not improve NDCG beyond composite scoring. We removed it in favor of direct statistical ranking.
+-
+-**Finding 5: Irreducible RMSE error exists from outlier users.**
+-Four consistent outlier users (e.g., average tone="enthusiastic", actual held-out rating=1.0) account for ~0.35 RMSE points. Without item-specific content understanding at inference time, these edge cases cannot be predicted. Excluding these outliers yields an effective RMSE of ~0.60.
+-
+-### 6.4 Final Results Summary
+-
+-**Task A — User Modeling:**
+-
+-| Criterion | Metric | Score |
+-|:---|:---|:---:|
+-| Rating Accuracy | RMSE | 0.956 |
+-| Review Text Quality | ROUGE-1 / ROUGE-L | 0.339 / 0.291 |
+-| Review Text Quality | BERTScore F1 | 0.901 |
+-| Behavioural Fidelity | Tone enforcement | LLM-classified per user, enforced in prompt |
+-| Behavioural Fidelity | Length fidelity | Within 2 words of user average |
+-| Behavioural Fidelity | Naija adaptation | Pidgin + cultural refs for Nigerian profiles |
+-
+-**Task B — Recommendation:**
+-
+-| Criterion | Metric | Score |
+-|:---|:---|:---:|
+-| Ranking Quality | NDCG@10 | 0.835 |
+-| Ranking Quality | Hit Rate@10 | 0.933 |
+-| Cold-Start Robustness | HR@10 (4-review users) | 0.933 (minimal observed degradation) |
+-| Cross-Domain | Semantic transfer | Enabled via embedding similarity |
+-
+----
+-
+-## 7. Qualitative Examples
+-
+-### 7.1 Task A — Generated vs. Ground Truth Review
+-
+-**User profile:** 8 reviews, average rating 3.8, tone: "casual conversationalist", avg length: 11 words.
+-
+-**Input:** Samsung Galaxy Buds3 Pro (Electronics)
+-
+-| | Text | Rating |
+-|---|---|---|
+-| **Ground truth** | "Sound quality is great. Comfortable fit. Worth it." | 4 |
+-| **Generated** | "Sound quality great, comfortable fit. Good product worth it." | 4.02 |
+-
+-The generated review reuses 6 of 9 ground-truth words (**ROUGE-1: 0.67**), matches the user's terse style, and the predicted rating is within 0.02 of actual. This is the vocabulary-forcing technique from Section 3.4 in action: the system did not generate a generic positive review — it reconstructed this specific user's voice.
+-
+-### 7.2 Task B — Recommendation Example
+-
+-**User:** Reviewed JBL Speaker (5/5), Anker Charger (4/5), USB-C Hub (3/5).
+-
+-**Query:** "Good earbuds for commuting in Lagos"
+-
+-| Rank | Recommended Item | Explanation |
+-|---|---|---|
+-| 1 | Sony WF-1000XM5 | Co-occurrence: 73% of JBL Speaker reviewers also reviewed this |
+-| 2 | Samsung Galaxy Buds3 Pro | Semantic match to "commuting" + electronics preference |
+-| 3 | Oraimo FreePods 4 | Category match + Nigerian brand relevance |
+-
+-### 7.3 Nigerian Adaptation Comparison
+-
+-**Same user, same product (Oraimo Power Bank 20000mAh):**
+-
+-> **Nigerian mode ON:** "This powerbank too good sha, e charge fast fast. Perfect for when NEPA take light. No disappoint at all!"
+->
+-> **Nigerian mode OFF:** "Great power bank, charges quickly. Good for power outages. Not disappointed."
+-
+-The Nigerian output uses Pidgin syntax ("too good sha"), reduplication ("fast fast"), and culturally specific references ("NEPA take light") that a Nigerian user would immediately recognise as authentic.
+-
+----
+-
+-## 8. Technical Stack and Reproducibility
+-
+-| Component | Technology |
+-|:---|:---|
+-| Primary LLM | Groq — Llama-3.3-70B-Versatile |
+-| Fallback LLM | OpenAI — GPT-4o-mini |
+-| Embeddings | Sentence-Transformers (all-MiniLM-L6-v2, local CPU) |
+-| Vector Store | ChromaDB (9,000 items indexed) |
+-| Rating Model | SVD (50 factors) + Bayesian shrinkage |
+-| Backend / Frontend | FastAPI + Streamlit |
+-| Container | Docker + Docker Compose |
+-
+-**Deployment:** `docker-compose up --build` starts the API (port 8000, Swagger at `/docs`) and UI (port 8501). Key endpoints: `/task-a/generate` (review + rating), `/task-b/recommend` (top-K recs), `/task-b/chat` (conversational).
+-
+----
+-
+-## 9. What We Would Do With More Time
+-
+-### 9.1 Rating Prediction (RMSE → 0.75)
+-- **Neural Collaborative Filtering (NeuMF):** Train a deep matrix factorization model on the full interaction matrix, capturing non-linear user-item patterns that linear SVD misses
+-- **Item content embeddings as rating signal:** Compute cosine similarity between user preference vectors and item embeddings, using alignment as an additional prediction feature
+-
+-### 9.2 Review Quality (ROUGE → 0.45)
+-- **Retrieval-augmented generation:** At generation time, retrieve the user's most similar past review (by item category + rating) and use it as a direct template, replacing only product-specific nouns
+-- **User-specific fine-tuning:** For users with 20+ reviews, fine-tune a small language model (e.g., GPT-2) on their corpus to internalize vocabulary patterns beyond prompt-level forcing
+-
+-### 9.3 Recommendation (maintaining elite NDCG)
+-- **Implicit feedback signals:** Incorporate review text sentiment (not just ratings) into the CF signal — a 3-star review with positive text should rank differently from a 3-star review with negative text
+-- **Real-time Pidgin detection:** Automatically detect Nigerian English in user reviews to trigger cultural adaptation without requiring metadata flags
+-
+----
+-
+-## 10. Conclusion
+-
+-NaijaReview AI demonstrates that hybrid architectures — combining statistical methods with LLM-powered reasoning — can achieve strong performance across both user modeling and recommendation. Our key contributions are:
+-
+-1. **The feature distribution mismatch finding:** We documented how XGBoost's 0.613 training RMSE became 1.193 at inference, leading to our principled SVD + bias approach. This is a generalizable lesson for practitioners.
+-
+-2. **Vocabulary-forcing for short reviews:** On datasets where most reviews are under 15 words, constraining the LLM to reuse the user's exact lexicon yields +21% ROUGE improvement. We adapt lexical-constrained prompting to the short-review recommendation setting, and believe this approach generalises to other short-text generation tasks.
+-
+-3. **Multi-signal retrieval:** Co-occurrence CF alone drove a 23× improvement in Hit Rate, demonstrating that simple, well-designed collaborative signals outperform LLM reasoning for ranking.
+-
+-The Nigerian contextualization module shows how LLM agents can be culturally adapted without dedicated training data — a pattern applicable to other underserved language communities across Africa and beyond. This cultural adaptation was integrated as a core system feature rather than a post-hoc addition, differentiating NaijaReview AI from systems that treat Nigerian users as generic English speakers.
+-
+----
+-
+-## References
+-
+-1. McAuley, J. et al. (2015). "Image-Based Recommendations on Styles and Substitutes." *SIGIR*.
+-2. Zhang, T. et al. (2020). "BERTScore: Evaluating Text Generation with BERT." *ICLR*.
+-3. Lin, C.-Y. (2004). "ROUGE: A Package for Automatic Evaluation of Summaries." *ACL Workshop*.
+-4. Koren, Y. et al. (2009). "Matrix Factorization Techniques for Recommender Systems." *IEEE Computer*, 42(8).
+-5. Reimers, N. & Gurevych, I. (2019). "Sentence-BERT." *EMNLP*.
+-6. He, X. et al. (2017). "Neural Collaborative Filtering." *WWW*.
+-7. Brown, T. et al. (2020). "Language Models are Few-Shot Learners." *NeurIPS*.
+-
+----
+-
+-*Submitted as part of the DSN × BCT Data & AI Summit Hackathon 3.0 — May 2026*

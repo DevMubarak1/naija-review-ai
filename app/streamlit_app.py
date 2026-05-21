@@ -6,22 +6,29 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from app.styles import CSS, LOGO, LOGO_SM, AV_USER, AV_AI, STOP_IC, IC, nav_html, SUGGESTIONS
+from app.styles import CSS, LOGO, LOGO_SM, AV_USER, AV_AI, STOP_IC, IC, nav_html, SUGGESTIONS, SPARKLE_SVG, HOMEPAGE_CSS
 
-st.set_page_config(page_title="NaijaReview AI", page_icon="🇳🇬", layout="wide",
+st.set_page_config(page_title="NaijaReview AI", layout="wide",
                    initial_sidebar_state="expanded")
 st.markdown(CSS, unsafe_allow_html=True)
 
 HIST_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "chat_history.json")
 
-# ── Try to import local pipeline modules for direct calls ──
-_DIRECT_MODE = False
-try:
+# Check if local pipeline files exist on disk to determine if direct mode is supported.
+# We avoid importing them here at the module level because importing heavy ML modules
+# (e.g. PyTorch, sentence-transformers, XGBoost) takes 15+ seconds, causing Streamlit connection timeouts.
+_DIRECT_MODE = (
+    os.path.exists(os.path.join(_ROOT, "app", "agents", "user_modeling", "pipeline.py")) and
+    os.path.exists(os.path.join(_ROOT, "app", "agents", "recommendation", "pipeline.py"))
+)
+
+def load_user_modeling_pipeline():
     from app.agents.user_modeling.pipeline import user_modeling_pipeline
+    return user_modeling_pipeline
+
+def load_recommendation_pipeline():
     from app.agents.recommendation.pipeline import recommendation_pipeline
-    _DIRECT_MODE = True
-except Exception:
-    pass
+    return recommendation_pipeline
 
 # Also try FastAPI if available
 API = os.getenv("API_URL", "http://localhost:8000")
@@ -58,20 +65,29 @@ if "history" not in st.session_state:
 if "prefs" not in st.session_state:
     st.session_state.prefs = {"nigerian_mode": True, "region": "Lagos",
                                "default_category": "Electronics", "top_k": 8}
+if "sending" not in st.session_state:
+    st.session_state.sending = False
+if "pending_query" not in st.session_state:
+    st.session_state.pending_query = None
 
 
 # ══════════════════════════════════════════
 # SMART API — tries direct first, then FastAPI
 # ══════════════════════════════════════════
+@st.cache_data(show_spinner=False, ttl=10)
+def check_api_health(api_url):
+    try:
+        import requests
+        r = requests.get(f"{api_url}/health", timeout=1.0)
+        return r.ok
+    except Exception:
+        return False
+
 def api_ok():
     """Check if backend is available (direct or API)."""
     if _DIRECT_MODE:
         return True
-    try:
-        import requests
-        return requests.get(f"{API}/health", timeout=3).ok
-    except Exception:
-        return False
+    return check_api_health(API)
 
 
 def smart_chat(msg, sid):
@@ -79,7 +95,8 @@ def smart_chat(msg, sid):
     # Try direct pipeline first
     if _DIRECT_MODE:
         try:
-            result = recommendation_pipeline.conversational_recommend(
+            pipeline = load_recommendation_pipeline()
+            result = pipeline.conversational_recommend(
                 user_id="demo_user_001",
                 message=msg,
                 session_id=sid,
@@ -87,7 +104,8 @@ def smart_chat(msg, sid):
             )
             return result.get("response", "I couldn't process that.")
         except Exception as e:
-            return f"Error: {str(e)[:200]}"
+            # Log and fallback to API
+            print(f"Direct mode chat failed: {e}", file=sys.stderr)
 
     # Fallback to FastAPI
     try:
@@ -108,14 +126,16 @@ def smart_generate_review(uid, item, cat, desc, is_ng, region, reviews):
     """Task A: Generate review."""
     if _DIRECT_MODE:
         try:
-            result = user_modeling_pipeline.run(
+            pipeline = load_user_modeling_pipeline()
+            result = pipeline.run(
                 user_id=uid, item_name=item, item_category=cat,
                 item_description=desc, reviews=reviews,
                 is_nigerian=is_ng, region=region,
             )
             return result
         except Exception as e:
-            return {"error": str(e)[:300]}
+            # Log and fallback to API
+            print(f"Direct mode generate review failed: {e}", file=sys.stderr)
 
     try:
         import requests
@@ -135,13 +155,15 @@ def smart_recommend(uid, query, top_k, is_ng, cat_filter, reviews):
     """Task B: Get recommendations."""
     if _DIRECT_MODE:
         try:
-            result = recommendation_pipeline.recommend(
+            pipeline = load_recommendation_pipeline()
+            result = pipeline.recommend(
                 user_id=uid, query=query, user_reviews=reviews,
                 top_k=top_k, is_nigerian=is_ng, category_filter=cat_filter,
             )
             return result
         except Exception as e:
-            return {"error": str(e)[:300]}
+            # Log and fallback to API
+            print(f"Direct mode recommendation failed: {e}", file=sys.stderr)
 
     try:
         import requests
@@ -167,14 +189,19 @@ def nav_btn(icon_key, label, key, mode_check=None):
 # ══════════════════════════════════════════
 # SIDEBAR
 # ══════════════════════════════════════════
+online = api_ok()
+_mode_label = "Direct" if _DIRECT_MODE else ("API" if online else "Offline")
+_mode_color = "#22c55e" if (_DIRECT_MODE or online) else "#ef4444"
+
 with st.sidebar:
     # Logo
     st.markdown(f'''<div class="sidebar-logo">
         {LOGO}<span>NaijaReview AI</span>
+        <span class="status-dot" style="background:{_mode_color};"></span>
     </div>''', unsafe_allow_html=True)
 
     # New Chat
-    if st.button("✦  New chat", key="new_chat", type="primary", use_container_width=True):
+    if st.button("New chat", key="new_chat", type="primary", use_container_width=True, icon=":material/add:"):
         st.session_state.mode = "home"
         st.session_state.result = None
         st.session_state.msgs = []
@@ -198,17 +225,18 @@ with st.sidebar:
     # ── Recents ──
     if st.session_state.history:
         st.markdown('<div class="nav-sec">Recents</div>', unsafe_allow_html=True)
-        for i, h in enumerate(st.session_state.history[:6]):
+        for i, h in enumerate(st.session_state.history[:8]):
             col_title, col_del = st.columns([0.85, 0.15])
             with col_title:
-                st.markdown(nav_html("chat", h["title"][:28]), unsafe_allow_html=True)
-                if st.button(h["title"][:28], key=f"rc_{i}", use_container_width=True):
+                icon = "edit" if h.get("mode") == "review" else ("star" if h.get("mode") == "recommend" else "chat")
+                st.markdown(nav_html(icon, h["title"][:30]), unsafe_allow_html=True)
+                if st.button(h["title"][:30], key=f"rc_{i}", use_container_width=True):
                     st.session_state.mode = h.get("mode", "chat")
                     st.session_state.msgs = h.get("msgs", [])
                     st.session_state.result = None
                     st.rerun()
             with col_del:
-                st.markdown(f'<div class="del-btn" style="margin-top:4px;">{IC["x"]}</div>',
+                st.markdown(f'<div class="del-btn">{IC["x"]}</div>',
                             unsafe_allow_html=True)
                 if st.button("x", key=f"del_{i}", use_container_width=True):
                     st.session_state.history.pop(i)
@@ -216,57 +244,65 @@ with st.sidebar:
                     st.rerun()
 
     # Bottom spacer + user card
-    st.markdown('<div style="height:70px;"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:80px;"></div>', unsafe_allow_html=True)
     st.markdown(f'''<div class="user-card">
-        <div class="user-av">RM</div>
-        <div><div class="user-nm">Raji Mubarak</div>
-        <div class="user-pl">Team Cerebral</div></div>
+        <div class="user-av">TC</div>
+        <div>
+            <div class="user-nm">Team Cerebral</div>
+            <div class="user-pl">DSN × BCT Hackathon 3.0</div>
+        </div>
     </div>''', unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════
-# MAIN CONTENT
+# MAIN CONTENT AREA
 # ══════════════════════════════════════════
-online = api_ok()
-
-# Backend mode indicator
-_mode_label = "Direct" if _DIRECT_MODE else ("API" if online else "Offline")
-_mode_color = "#22c55e" if (_DIRECT_MODE or online) else "#ef4444"
-
-# Top bar (shown on all modes except home)
-if st.session_state.mode != "home":
-    st.markdown(f'''<div class="top-bar">
-        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
-        <span style="font-size:.78rem;color:{_mode_color};font-weight:500;">
-            <span class="dot" style="background:{_mode_color};"></span>
-            {_mode_label}
-        </span>
-    </div>''', unsafe_allow_html=True)
-
 
 # ════════ HOME — Hero Landing ════════
 if st.session_state.mode == "home":
-    st.markdown('<div style="height:18vh;"></div>', unsafe_allow_html=True)
+    # Inject home-page specific CSS scoping rules to turn suggestion buttons into premium cards
+    st.markdown(HOMEPAGE_CSS, unsafe_allow_html=True)
 
-    # Hero emoji + title + subtitle
-    st.markdown('<div class="hero-emoji">✦</div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-title">NaijaReview AI</div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-sub">Your AI-powered review generator & recommendation engine.<br>'
-                'Ask anything about products, get personalized recommendations, or generate reviews.</div>',
-                unsafe_allow_html=True)
+    # Vertical spacing to center content
+    st.markdown('<div class="hero-spacer"></div>', unsafe_allow_html=True)
 
-    # Centered input
+    # Greeting + branding
+    st.markdown(f'''<div class="hero-section">
+        <div class="hero-icon">{SPARKLE_SVG}</div>
+        <h1 class="hero-title">NaijaReview AI</h1>
+        <p class="hero-sub">
+            Your AI-powered review generator &amp; recommendation engine.<br>
+            Generate reviews, get personalized recommendations, or chat about products.
+        </p>
+    </div>''', unsafe_allow_html=True)
+
+    # Centered input area
     _p1, cc, _p2 = st.columns([1.2, 2.5, 1.2])
     with cc:
-        query = st.text_input("Ask", placeholder="Ask anything about reviews, recommendations...",
-                              label_visibility="collapsed", key="home_q")
+        st.markdown('<div class="search-bar-anchor"></div>', unsafe_allow_html=True)
+        in_col, btn_col = st.columns([0.88, 0.12])
+        with in_col:
+            query = st.text_input("Ask", placeholder="Ask anything about reviews, recommendations...",
+                                   label_visibility="collapsed", key="home_q", disabled=st.session_state.sending)
+        with btn_col:
+            btn_icon = ":material/square:" if st.session_state.sending else ":material/send:"
+            send_clicked = st.button("", icon=btn_icon, key="home_send_btn", disabled=st.session_state.sending, use_container_width=True)
 
-        # Suggestion pills
-        st.markdown('<div class="suggestion-pills">', unsafe_allow_html=True)
-        pill_cols = st.columns(len(SUGGESTIONS))
+        # Trigger submission on enter or click
+        if (query and query.strip() and not st.session_state.sending) or (send_clicked and st.session_state.home_q and st.session_state.home_q.strip()):
+            q_text = st.session_state.home_q.strip()
+            st.session_state.sending = True
+            st.session_state.pending_query = q_text
+            st.rerun()
+
+        # Suggestion cards (2x2 grid)
+        st.markdown('<div class="suggestion-anchor"></div>', unsafe_allow_html=True)
+        r1_c1, r1_c2 = st.columns(2)
+        r2_c1, r2_c2 = st.columns(2)
+        grid_cols = [r1_c1, r1_c2, r2_c1, r2_c2]
         for idx, sug in enumerate(SUGGESTIONS):
-            with pill_cols[idx]:
-                if st.button(f'{sug["icon"]}  {sug["label"]}', key=f"sug_{idx}", use_container_width=True):
+            with grid_cols[idx]:
+                if st.button(sug["label"], key=f"sug_{idx}", use_container_width=True, icon=sug["icon"], disabled=st.session_state.sending):
                     if sug["mode"] == "chat":
                         st.session_state.mode = "chat"
                         if "Pidgin" in sug["label"]:
@@ -279,44 +315,67 @@ if st.session_state.mode == "home":
                         st.session_state.mode = sug["mode"]
                         st.session_state.result = None
                     st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
-        # Powered-by footer
+        # Footer
         st.markdown(f'''<div class="powered-by">
             Powered by <a href="#">Groq Llama 3.3</a> · <a href="#">OpenAI GPT-4o-mini</a> · Team Cerebral
-            <br><span style="color:{'#22c55e' if online else '#ef4444'}">● {_mode_label}</span>
+            <br><span style="color:{_mode_color}">● {_mode_label}</span>
         </div>''', unsafe_allow_html=True)
 
-        if query:
-            st.session_state.mode = "chat"
-            st.session_state.msgs.append({"role": "user", "content": query})
-            resp = smart_chat(query, st.session_state.sid)
+        if st.session_state.sending and st.session_state.pending_query:
+            q_text = st.session_state.pending_query
+            resp = smart_chat(q_text, st.session_state.sid)
+            st.session_state.msgs.append({"role": "user", "content": q_text})
             st.session_state.msgs.append({"role": "assistant", "content": resp})
             st.session_state.history.insert(0, {
-                "title": query[:30], "mode": "chat",
+                "title": q_text[:30], "mode": "chat",
                 "msgs": list(st.session_state.msgs)
             })
             _save_history()
+            
+            # Reset sending state and transition to chat page
+            st.session_state.sending = False
+            st.session_state.pending_query = None
+            st.session_state.mode = "chat"
             st.rerun()
 
 
 # ════════ REVIEW ════════
 elif st.session_state.mode == "review":
+    # Top bar
+    st.markdown(f'''<div class="top-bar">
+        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
+        <div class="mode-indicator">
+            <span class="dot" style="background:{_mode_color};"></span>
+            <span style="color:{_mode_color};">{_mode_label}</span>
+        </div>
+    </div>''', unsafe_allow_html=True)
+
+    # Mode badge
     st.markdown(f'<div class="mode-pill">{IC["edit"]} Generate Review</div>', unsafe_allow_html=True)
+
+    # Centered form
     _p1, cm, _p2 = st.columns([1, 3, 1])
     with cm:
-        st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="form-container">', unsafe_allow_html=True)
         p = st.session_state.prefs
+
+        # User ID
         uid = st.text_input("User ID", "demo_user_001", key="a_uid")
+
+        # Two-column form
         c1, c2 = st.columns(2)
         with c1:
-            item = st.text_input("Product", "Samsung Galaxy Buds3 Pro")
+            item = st.text_input("Product Name", "Samsung Galaxy Buds3 Pro")
             cat = st.selectbox("Category", ["Electronics", "Restaurants", "Books", "Fashion", "Movies"],
                                index=["Electronics", "Restaurants", "Books", "Fashion", "Movies"].index(p["default_category"]))
         with c2:
-            desc = st.text_area("Description", "Premium wireless earbuds with ANC and 360 Audio.", height=100)
-            is_ng = st.toggle("Nigerian Mode 🇳🇬", p["nigerian_mode"], key="a_ng")
-        if st.button("Generate Review  →", type="primary", use_container_width=True, key="gen"):
+            desc = st.text_area("Product Description", "Premium wireless earbuds with ANC and 360 Audio.", height=100)
+            is_ng = st.toggle("Nigerian Mode", p["nigerian_mode"], key="a_ng")
+
+        # Generate button
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+        if st.button("Generate Review", type="primary", use_container_width=True, key="gen", icon=":material/arrow_forward:"):
             reviews = [
                 {"rating": 5, "review_text": "Amazing!", "item_name": "Headphones", "category": "Electronics"},
                 {"rating": 4, "review_text": "Good value.", "item_name": "Phone Case", "category": "Electronics"},
@@ -330,32 +389,71 @@ elif st.session_state.mode == "review":
                     st.session_state.result = result
                     st.session_state.history.insert(0, {"title": f"{item} review", "mode": "review", "msgs": []})
                     _save_history()
+
+        # Results
         if st.session_state.result and st.session_state.mode == "review":
             d = st.session_state.result
+            st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
+
+            # Metrics row
             st.markdown(f'''<div class="metric-row">
-                <div class="metric-card"><div class="metric-val">{d.get("rating",0):.1f}</div><div class="metric-lbl">Rating</div></div>
-                <div class="metric-card"><div class="metric-val">{d.get("confidence",0):.0%}</div><div class="metric-lbl">Confidence</div></div>
-                <div class="metric-card"><div class="metric-val">{len(d.get("review_text","").split())}</div><div class="metric-lbl">Words</div></div>
-            </div><div class="review-box">{d.get("review_text","")}</div>''', unsafe_allow_html=True)
-            with st.expander("🧠 Agent Reasoning"):
+                <div class="metric-card">
+                    <div class="metric-val">{d.get('rating',0):.1f} <svg width="18" height="18" viewBox="0 0 24 24" fill="#1a7a4c" style="display:inline-block;vertical-align:middle;margin-top:-4px;margin-left:2px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
+                    <div class="metric-lbl">Predicted Rating</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-val">{d.get("confidence",0):.0%}</div>
+                    <div class="metric-lbl">Confidence</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-val">{len(d.get("review_text","").split())}</div>
+                    <div class="metric-lbl">Word Count</div>
+                </div>
+            </div>''', unsafe_allow_html=True)
+
+            # Generated review
+            st.markdown(f'''<div class="review-box">
+                <div class="review-quote">❝</div>
+                {d.get("review_text","")}
+            </div>''', unsafe_allow_html=True)
+
+            with st.expander("Agent Reasoning", icon=":material/psychology:"):
                 st.write(d.get("reasoning", ""))
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ════════ RECOMMEND ════════
 elif st.session_state.mode == "recommend":
+    # Top bar
+    st.markdown(f'''<div class="top-bar">
+        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
+        <div class="mode-indicator">
+            <span class="dot" style="background:{_mode_color};"></span>
+            <span style="color:{_mode_color};">{_mode_label}</span>
+        </div>
+    </div>''', unsafe_allow_html=True)
+
+    # Mode badge
     st.markdown(f'<div class="mode-pill">{IC["star"]} Get Recommendations</div>', unsafe_allow_html=True)
+
+    # Centered form
     _p1, cm, _p2 = st.columns([1, 3, 1])
     with cm:
-        st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="form-container">', unsafe_allow_html=True)
         p = st.session_state.prefs
+
         uid = st.text_input("User ID", "demo_user_001", key="b_uid")
         q = st.text_input("What are you looking for?", placeholder="e.g. Good earbuds for Lagos traffic", key="b_q")
+
         c1, c2 = st.columns(2)
         with c1:
-            k = st.slider("Results", 3, 15, p["top_k"])
+            k = st.slider("Number of results", 3, 15, p["top_k"])
         with c2:
-            cat_f = st.selectbox("Category", [None, "Electronics", "Restaurants", "Books"], key="b_cat")
-        if st.button("Get Recommendations  →", type="primary", use_container_width=True, key="rec"):
+            cat_f = st.selectbox("Category filter", [None, "Electronics", "Restaurants", "Books"], key="b_cat")
+
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+        if st.button("Get Recommendations", type="primary", use_container_width=True, key="rec", icon=":material/arrow_forward:"):
             reviews = [{"rating": 5, "review_text": "Love this!", "item_name": "JBL Speaker", "category": "Electronics"}]
             with st.spinner("Searching & ranking..."):
                 result = smart_recommend(uid, q, k, p["nigerian_mode"], cat_f, reviews)
@@ -365,50 +463,93 @@ elif st.session_state.mode == "recommend":
                     st.session_state.result = result
                     st.session_state.history.insert(0, {"title": f"Recs: {q[:25]}" if q else "Recommendations", "mode": "recommend", "msgs": []})
                     _save_history()
+
+        # Results
         if st.session_state.result and st.session_state.mode == "recommend":
             data = st.session_state.result
-            st.caption(f"🔍 {data.get('total_candidates_considered', 0)} candidates evaluated")
+            st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
+            st.markdown(f'''<div class="results-header">
+                {IC["search"]} <span>{data.get('total_candidates_considered', 0)} candidates evaluated</span>
+            </div>''', unsafe_allow_html=True)
+
             for rec in data.get("recommendations", []):
+                score_pct = rec.get("score", 0)
+                if isinstance(score_pct, (int, float)) and score_pct <= 1:
+                    score_pct = f"{score_pct:.0%}"
+                else:
+                    score_pct = f"{score_pct}"
+
                 st.markdown(f'''<div class="rec-card">
                     <div class="rec-rank">{rec.get("rank","")}</div>
-                    <div style="flex:1;">
-                        <div class="rec-name">{rec.get("item_name","")}</div>
-                        <span class="rec-cat">{rec.get("category","")}</span>
-                        <div class="rec-desc">{rec.get("explanation","")[:200]}</div>
+                    <div class="rec-body">
+                        <div class="rec-header">
+                            <div class="rec-name">{rec.get("item_name","")}</div>
+                            <span class="rec-cat">{rec.get("category","")}</span>
+                        </div>
+                        <div class="rec-desc">{rec.get("explanation","")[:220]}</div>
                     </div>
                 </div>''', unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ════════ CHAT ════════
 elif st.session_state.mode == "chat":
-    st.markdown(f'<div class="mode-pill">{IC["chat"]} Chat with AI</div>', unsafe_allow_html=True)
+    # Top bar
+    st.markdown(f'''<div class="top-bar">
+        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
+        <div class="mode-indicator">
+            <span class="dot" style="background:{_mode_color};"></span>
+            <span style="color:{_mode_color};">{_mode_label}</span>
+        </div>
+    </div>''', unsafe_allow_html=True)
 
+    # Show empty state if no messages
+    if not st.session_state.msgs:
+        st.markdown(f'''<div class="chat-empty">
+            <div class="chat-empty-icon" style="color:#1a7a4c;">{IC["chat"]}</div>
+            <div class="chat-empty-title">Start a conversation</div>
+            <div class="chat-empty-sub">Ask about products, get recommendations, or chat in Nigerian Pidgin.</div>
+        </div>''', unsafe_allow_html=True)
+
+    # Render existing messages
     for m in st.session_state.msgs:
         av = AV_AI if m["role"] == "assistant" else AV_USER
+        role_class = "msg-ai" if m["role"] == "assistant" else "msg-user"
         with st.chat_message(m["role"]):
-            st.markdown(f'''<div style="display:flex;gap:12px;align-items:flex-start;">
-                <div style="flex-shrink:0;margin-top:2px;">{av}</div>
-                <div style="font-size:.9rem;line-height:1.7;color:#111827;">{m["content"]}</div>
+            st.markdown(f'''<div class="chat-msg {role_class}">
+                <div class="chat-avatar">{av}</div>
+                <div class="chat-text">{m["content"]}</div>
             </div>''', unsafe_allow_html=True)
 
+    # Chat input
     if prompt := st.chat_input("Ask for recommendations, reviews, or anything..."):
         st.session_state.msgs.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
-            st.markdown(f'<div style="display:flex;gap:12px;align-items:flex-start;">'
-                        f'<div style="flex-shrink:0;margin-top:2px;">{AV_USER}</div>'
-                        f'<div style="font-size:.9rem;line-height:1.7;">{prompt}</div></div>',
-                        unsafe_allow_html=True)
+            st.markdown(f'''<div class="chat-msg msg-user">
+                <div class="chat-avatar">{AV_USER}</div>
+                <div class="chat-text">{prompt}</div>
+            </div>''', unsafe_allow_html=True)
+
         with st.chat_message("assistant"):
             ph = st.empty()
-            ph.markdown(f'<div style="display:flex;gap:12px;align-items:center;">'
-                        f'<div style="flex-shrink:0;">{AV_AI}</div>'
-                        f'<div style="color:#9ca3af;display:flex;align-items:center;gap:6px;">'
-                        f'{STOP_IC} Thinking...</div></div>', unsafe_allow_html=True)
+            ph.markdown(f'''<div class="chat-msg msg-ai">
+                <div class="chat-avatar">{AV_AI}</div>
+                <div class="chat-thinking">
+                    <div class="thinking-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    Thinking...
+                </div>
+            </div>''', unsafe_allow_html=True)
+
             resp = smart_chat(prompt, st.session_state.sid)
-            ph.markdown(f'<div style="display:flex;gap:12px;align-items:flex-start;">'
-                        f'<div style="flex-shrink:0;margin-top:2px;">{AV_AI}</div>'
-                        f'<div style="font-size:.9rem;line-height:1.7;color:#111827;">{resp}</div></div>',
-                        unsafe_allow_html=True)
+
+            ph.markdown(f'''<div class="chat-msg msg-ai">
+                <div class="chat-avatar">{AV_AI}</div>
+                <div class="chat-text">{resp}</div>
+            </div>''', unsafe_allow_html=True)
+
             st.session_state.msgs.append({"role": "assistant", "content": resp})
             st.session_state.history.insert(0, {
                 "title": prompt[:30], "mode": "chat",
@@ -419,27 +560,58 @@ elif st.session_state.mode == "chat":
 
 # ════════ PREFERENCES ════════
 elif st.session_state.mode == "preferences":
+    # Top bar
+    st.markdown(f'''<div class="top-bar">
+        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
+        <div class="mode-indicator">
+            <span class="dot" style="background:{_mode_color};"></span>
+            <span style="color:{_mode_color};">{_mode_label}</span>
+        </div>
+    </div>''', unsafe_allow_html=True)
+
     _p1, cm, _p2 = st.columns([1, 3, 1])
     with cm:
-        st.markdown(f'<div class="sec-hd">{IC["gear"]} <span style="font-size:1.1rem;font-weight:600;">Preferences</span></div>', unsafe_allow_html=True)
+        st.markdown(f'''<div class="pref-header">
+            {IC["gear"]}
+            <span>Preferences</span>
+        </div>''', unsafe_allow_html=True)
+
+        st.markdown('<div class="form-container">', unsafe_allow_html=True)
         p = st.session_state.prefs
-        ng = st.toggle("Nigerian Mode 🇳🇬", p["nigerian_mode"], key="pf_ng")
+
+        # Nigerian mode toggle
+        st.markdown('<div class="pref-section">Language & Region</div>', unsafe_allow_html=True)
+        ng = st.toggle("Nigerian Mode", p["nigerian_mode"], key="pf_ng")
         region = st.selectbox("Default Region", ["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan", "Enugu"],
                               index=["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan", "Enugu"].index(p["region"]), key="pf_r")
+
+        st.markdown('<div class="pref-section">Defaults</div>', unsafe_allow_html=True)
         cat = st.selectbox("Default Category", ["Electronics", "Restaurants", "Books", "Fashion", "Movies"],
                            index=["Electronics", "Restaurants", "Books", "Fashion", "Movies"].index(p["default_category"]), key="pf_c")
-        topk = st.slider("Default recommendations", 3, 20, p["top_k"], key="pf_k")
-        if st.button("Save Preferences  ✓", type="primary", use_container_width=True, key="save_p"):
+        topk = st.slider("Default number of recommendations", 3, 20, p["top_k"], key="pf_k")
+
+        st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
+        if st.button("Save Preferences", type="primary", use_container_width=True, key="save_p", icon=":material/check:"):
             st.session_state.prefs = {"nigerian_mode": ng, "region": region,
                                       "default_category": cat, "top_k": topk}
-            st.success("✅ Preferences saved successfully.")
+            st.success("Preferences saved successfully.")
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ════════ SYSTEM INFO ════════
 elif st.session_state.mode == "system_info":
+    st.markdown(f'''<div class="top-bar">
+        <div class="top-bar-l">{LOGO_SM}<span>NaijaReview AI</span></div>
+        <div class="mode-indicator">
+            <span class="dot" style="background:{_mode_color};"></span>
+            <span style="color:{_mode_color};">{_mode_label}</span>
+        </div>
+    </div>''', unsafe_allow_html=True)
+
     _p1, cm, _p2 = st.columns([1, 3, 1])
     with cm:
-        st.markdown(f'<div class="sec-hd">{IC["info"]} <span style="font-size:1.1rem;font-weight:600;">System Information</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="pref-header">{IC["info"]} <span>System Information</span></div>', unsafe_allow_html=True)
         st.info(f"**Mode:** {'Direct Pipeline' if _DIRECT_MODE else 'FastAPI Backend'}")
         if online:
             try:
