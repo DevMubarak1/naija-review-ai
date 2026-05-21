@@ -1,12 +1,12 @@
 """Styles and SVG assets for the NaijaReview AI Streamlit dashboard."""
 
 # ── Logos ──
-LOGO = '<svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#1a7a4c"/><path d="M8 12L18 8l10 4v12l-10 4-10-4Z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><circle cx="18" cy="17" r="4" fill="#fff" opacity=".9"/><path d="M16 17l1.5 1.5L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-LOGO_SM = '<svg width="22" height="22" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#1a7a4c"/><circle cx="18" cy="17" r="4" fill="#fff" opacity=".9"/><path d="M16 17l1.5 1.5L20 15.5" stroke="#1a7a4c" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+LOGO = '<svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="#1a7a4c"/><path d="M14 5Q14 14 23 14Q14 14 14 23Q14 14 5 14Q14 14 14 5Z" fill="#ffffff"/></svg>'
+LOGO_SM = '<svg width="22" height="22" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="#1a7a4c"/><path d="M14 5Q14 14 23 14Q14 14 14 23Q14 14 5 14Q14 14 14 5Z" fill="#ffffff"/></svg>'
 
 # ── Chat avatars ──
 AV_USER = '<svg width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#e8f5ee"/><circle cx="14" cy="10" r="4.5" fill="#1a7a4c"/><path d="M5 24c0-5 4-9 9-9s9 4 9 9" fill="#1a7a4c"/></svg>'
-AV_AI = '<svg width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="#1a7a4c"/><circle cx="14" cy="12" r="3.5" fill="#fff" opacity=".9"/><path d="M12 12l1.2 1.2L15 11" stroke="#1a7a4c" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="19" width="12" height="2" rx="1" fill="#fff" opacity=".4"/></svg>'
+AV_AI = '<svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="#1a7a4c"/><path d="M14 5Q14 14 23 14Q14 14 14 23Q14 14 5 14Q14 14 14 5Z" fill="#ffffff"/></svg>'
 STOP_IC = '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" rx="2" fill="#9ca3af"/></svg>'
 
 # ── SVG icons — all 16x16 ──
@@ -38,11 +38,13 @@ def nav_html(icon_key, label, active=False):
     bg = "background:#e8f5ee;color:#1a7a4c;" if active else ""
     ic_color = "color:#1a7a4c;" if active else "color:#6b7280;"
     fw = "font-weight:600;" if active else "font-weight:500;"
-    return f'''<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;
+    cls = "sidebar-nav-item active" if active else "sidebar-nav-item"
+    return f'''<div class="{cls}" style="display:flex;align-items:center;gap:10px;padding:8px 14px;
         border-radius:10px;{bg}transition:all .15s ease;cursor:pointer;">
-        <span style="flex-shrink:0;display:flex;align-items:center;{ic_color}">{IC[icon_key]}</span>
-        <span style="font-size:0.84rem;{fw}color:{'#1a7a4c' if active else '#374151'};">{label}</span>
+        <span class="nav-icon" style="flex-shrink:0;display:flex;align-items:center;{ic_color}">{IC[icon_key]}</span>
+        <span class="nav-label" style="font-size:0.84rem;{fw}color:{'#1a7a4c' if active else '#374151'};">{label}</span>
     </div>'''
+
 
 
 # ── Suggestion pill data ──
@@ -325,16 +327,27 @@ html,body,[data-testid="stAppViewContainer"],[data-testid="stApp"],.main{
 /* ═══════════════════════════════════════════
    HIDE STREAMLIT CHROME
    ═══════════════════════════════════════════ */
-header[data-testid="stHeader"],[data-testid="stToolbar"],
+[data-testid="stToolbar"],
 [data-testid="stDecoration"],footer,#MainMenu{display:none!important;height:0!important;}
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    height: 3.75rem !important;
+    min-height: 3.75rem !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+}
+header[data-testid="stHeader"] * {
+    pointer-events: auto !important;
+}
 [data-testid="stRadio"]{display:none!important;}
 hr{display:none!important;}
+
 
 /* ═══════════════════════════════════════════
    SIDEBAR — COLLAPSE / EXPAND BUTTONS
    ═══════════════════════════════════════════ */
 [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]{
-    display:flex!important;position:absolute!important;top:10px;right:10px;z-index:2000000!important;
+    display:flex!important;position:absolute!important;top:12px!important;right:12px!important;z-index:2000000!important;
     margin-top:0!important;padding:0!important;
 }
 [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button{
@@ -345,27 +358,45 @@ hr{display:none!important;}
 [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button:hover{
     background:var(--bg3)!important;color:var(--text)!important;
 }
-[data-testid="collapsedControl"]{display:flex!important;position:fixed!important;top:12px;left:12px;z-index:2000001!important;transform:none!important;}
-[data-testid="collapsedControl"] button{
+
+/* Expand Sidebar Toggle Button (when sidebar is closed) */
+[data-testid="collapsedControl"],
+[data-testid="stExpandSidebarButton"],
+[data-testid="stHeader"] [data-testid="stSidebarCollapseButton"],
+[data-sidebar-state="collapsed"] [data-testid="stSidebarCollapseButton"] {
+    display:flex!important;position:fixed!important;top:12px!important;left:12px!important;z-index:2000001!important;transform:none!important;
+    visibility:visible!important;opacity:1!important;
+}
+[data-testid="collapsedControl"] button,
+[data-testid="stExpandSidebarButton"] button,
+[data-testid="stHeader"] [data-testid="stSidebarCollapseButton"] button,
+[data-testid="collapsedControl"] [data-testid="stSidebarCollapseButton"] button,
+[data-sidebar-state="collapsed"] [data-testid="stSidebarCollapseButton"] button {
     background:var(--bg)!important;border:1px solid var(--border)!important;color:var(--green)!important;
     padding:6px!important;border-radius:10px!important;box-shadow:var(--shadow-md)!important;
     min-height:0!important;width:36px!important;height:36px!important;
     display:flex!important;align-items:center!important;justify-content:center!important;
+    visibility:visible!important;opacity:1!important;
 }
-[data-testid="collapsedControl"] button:hover{background:var(--green-light)!important;border-color:var(--green)!important;}
-[data-testid="stExpandSidebarButton"],[data-testid="stExpandSidebarButton"] button{
-    position:fixed!important;left:12px!important;top:12px!important;z-index:2000002!important;display:flex!important;
-    width:36px!important;height:36px!important;padding:6px!important;
-    align-items:center!important;justify-content:center!important;
-    background:var(--bg)!important;border:1px solid var(--border)!important;
-    border-radius:10px!important;box-shadow:var(--shadow-md)!important;color:var(--green)!important;
+[data-testid="collapsedControl"] button:hover,
+[data-testid="stExpandSidebarButton"] button:hover,
+[data-testid="stHeader"] [data-testid="stSidebarCollapseButton"] button:hover,
+[data-testid="collapsedControl"] [data-testid="stSidebarCollapseButton"] button:hover,
+[data-sidebar-state="collapsed"] [data-testid="stSidebarCollapseButton"] button:hover {
+    background:var(--green-light)!important;border-color:var(--green)!important;
+}
+
+/* Prevent top bar content from overlapping the expand button when sidebar is collapsed */
+[data-sidebar-state="collapsed"] .top-bar {
+    padding-left: 60px !important;
 }
 
 /* ═══════════════════════════════════════════
    SIDEBAR — BODY
    ═══════════════════════════════════════════ */
 [data-testid="stSidebar"]{
-    background:var(--bg2)!important;border-right:1px solid var(--border)!important;
+    background-color: #f9fafb !important;
+    border-right: 1px solid #e5e7eb !important;
     width:280px!important;padding:0!important;
     transition:margin-left .25s ease,transform .25s ease!important;
 }
@@ -378,66 +409,133 @@ section[data-testid="stSidebar"]>div>div>div{
 }
 [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"]{padding:0!important;margin:0!important;}
 [data-testid="stSidebar"] .stVerticalBlock{gap:0!important;}
-section[data-testid="stSidebar"]>div{height:100vh!important;overflow-y:auto!important;padding:0 12px 90px!important;}
+section[data-testid="stSidebar"]>div{height:100vh!important;overflow-y:auto!important;padding:0 12px 100px!important;}
 section[data-testid="stSidebar"]{padding-top:0!important;margin-top:0!important}
 
 /* Sidebar logo */
 .sidebar-logo{
     position:sticky!important;top:0;z-index:100000!important;
-    background:var(--bg2);padding:16px 14px 14px;
-    display:flex;align-items:center;gap:10px;
-    border-bottom:1px solid var(--border);margin-top:0!important;margin-bottom:6px!important;
+    background: #f9fafb !important;
+    padding: 12px 48px 12px 24px !important;
+    margin-left: -12px !important;
+    margin-right: -12px !important;
+    display:flex;align-items:center;gap:12px;
+    border-bottom:1px solid #f3f4f6!important;
+    margin-top:0!important;
+    margin-bottom:24px!important;
 }
-.sidebar-logo span{font-size:.92rem;font-weight:700;color:var(--text);}
-.status-dot{width:8px;height:8px;border-radius:50%;margin-left:auto;flex-shrink:0;}
+.sidebar-logo span{font-size:1.05rem!important;font-weight:700!important;color:#111827!important;letter-spacing:-0.02em!important;}
+.status-dot{
+    width:8px;height:8px;border-radius:50%;margin-left:auto;flex-shrink:0;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+    transition: box-shadow 0.2s ease;
+}
+.status-dot[style*="#22c55e"] {
+    animation: pulse 2.5s infinite;
+}
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
 
 /* New Chat button */
 [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]{
     opacity:1!important;height:auto!important;position:relative!important;margin-top:0!important;
-    background:transparent!important;border:1.5px solid var(--border)!important;color:var(--text)!important;
-    font-weight:600!important;border-radius:22px!important;padding:10px 18px!important;
-    justify-content:center!important;font-size:.84rem!important;
-    transition:var(--transition)!important;
+    background-color: var(--green) !important;color:#ffffff!important;
+    border: none !important;
+    font-weight:600!important;border-radius:12px!important;padding:12px 20px!important;
+    justify-content:center!important;font-size:0.9rem!important;
+    box-shadow: 0 4px 12px rgba(26, 122, 76, 0.15) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 [data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:hover{
-    background:var(--green-light)!important;border-color:var(--green)!important;color:var(--green)!important;
+    background-color: var(--green-hover) !important;
+    box-shadow: 0 6px 16px rgba(26, 122, 76, 0.25) !important;
+    transform: translateY(-1px) !important;
 }
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:active{
+    transform: translateY(1px) !important;
+}
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] p {
+    color: #ffffff !important;
+}
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] span[data-testid="stWidgetIcon"] {
+    color: #ffffff !important;
+}
+
 
 /* Sidebar nav buttons — invisible overlay technique */
 [data-testid="stSidebar"] [data-testid="stButton"]{margin:0!important;padding:0!important;}
-[data-testid="stSidebar"] [data-testid="stButton"] button{
+[data-testid="stSidebar"] [data-testid="stButton"] button:not([kind="primary"]){
     width:100%!important;background:transparent!important;border:none!important;
     padding:0!important;margin:0!important;min-height:0!important;height:34px!important;
     opacity:0!important;cursor:pointer!important;position:relative!important;
     margin-top:-34px!important;z-index:2!important;
 }
 
+/* Hover highlights for nav items via button hover status */
+div:has(+ div button:hover) .sidebar-nav-item {
+    background-color: #f3f4f6 !important;
+}
+div:has(+ div button:hover) .sidebar-nav-item .nav-icon {
+    color: #111827 !important;
+}
+div:has(+ div button:hover) .sidebar-nav-item .nav-label {
+    color: #111827 !important;
+}
+div:has(+ div button:hover) .sidebar-nav-item.active {
+    background-color: #dcf5e7 !important;
+}
+
 /* Section headers */
 .nav-sec{
-    font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;
-    color:var(--text-light);font-weight:600;padding:22px 14px 8px;margin:0;
+    font-size:0.72rem!important;text-transform:uppercase!important;letter-spacing:0.08em!important;
+    color:#9ca3af!important;font-weight:700!important;
+    padding:24px 14px 4px!important;
+    margin-top:0!important;
+    margin-bottom:10px!important;
 }
+
 
 /* Fixed user card */
 .user-card{
     position:fixed!important;bottom:0;left:0;width:280px;
-    background:var(--bg2);border-top:1px solid var(--border);border-right:1px solid var(--border);
-    padding:14px 16px;display:flex;align-items:center;gap:10px;z-index:999;
+    background-color: #f9fafb !important;
+    border-top:1px solid #e5e7eb!important;border-right:1px solid #e5e7eb!important;
+    padding:16px 20px!important;display:flex;align-items:center;gap:12px;z-index:999;
+    transition: all 0.2s ease !important;
+}
+.user-card:hover{
+    background-color: #f3f4f6 !important;
 }
 .user-av{
-    width:36px;height:36px;border-radius:50%;background:var(--green-light);color:var(--green);
-    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;flex-shrink:0;
+    width:38px;height:38px;border-radius:10px;
+    background: linear-gradient(135deg, #1a7a4c, #2ecc71);
+    color: #ffffff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;
+    box-shadow: 0 2px 6px rgba(26, 122, 76, 0.15);
 }
-.user-nm{font-size:.84rem;font-weight:600;color:var(--text);line-height:1.3;}
-.user-pl{font-size:.68rem;color:var(--text-light);}
+.user-nm{font-size:0.86rem!important;font-weight:600!important;color:#111827!important;line-height:1.3;}
+.user-pl{font-size:0.7rem!important;color:#6b7280!important;font-weight:500;}
 
 /* Delete button in recents */
 .del-btn{
-    display:flex;align-items:center;justify-content:center;width:24px;height:24px;
-    border-radius:6px;cursor:pointer;color:var(--text-light);transition:var(--transition);
-    margin-top:5px;
+    display:flex;align-items:center;justify-content:center;width:28px;height:28px;
+    border-radius:8px;cursor:pointer;color:#9ca3af;transition:all 0.2s ease;
+    margin-top:3px;
 }
-.del-btn:hover{background:#fef2f2;color:#ef4444;}
+div:has(+ div button:hover) .del-btn {
+    background-color: #fee2e2 !important;
+    color: #ef4444 !important;
+}
+
 
 /* ═══════════════════════════════════════════
    HERO — LANDING PAGE
