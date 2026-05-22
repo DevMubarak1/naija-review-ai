@@ -327,8 +327,13 @@ html,body,[data-testid="stAppViewContainer"],[data-testid="stApp"],.main{
 /* ═══════════════════════════════════════════
    HIDE STREAMLIT CHROME
    ═══════════════════════════════════════════ */
-[data-testid="stToolbar"],
 [data-testid="stDecoration"],footer,#MainMenu{display:none!important;height:0!important;}
+[data-testid="stToolbar"] {
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+}
 header[data-testid="stHeader"] {
     background: transparent !important;
     height: 3.75rem !important;
@@ -346,17 +351,37 @@ hr{display:none!important;}
 /* ═══════════════════════════════════════════
    SIDEBAR — COLLAPSE / EXPAND BUTTONS
    ═══════════════════════════════════════════ */
-[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]{
-    display:flex!important;position:absolute!important;top:12px!important;right:12px!important;z-index:2000000!important;
-    margin-top:0!important;padding:0!important;
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button {
+    display: flex !important;
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    z-index: 2000001 !important;
+    margin-top: 0 !important;
+    padding: 4px !important;
+    min-height: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    opacity: 1 !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-light) !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
 }
-[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button{
-    background:transparent!important;border:none!important;color:var(--text-light)!important;
-    padding:4px!important;min-height:0!important;width:28px!important;height:28px!important;
-    border-radius:8px!important;opacity:1!important;position:relative!important;margin-top:0!important;
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:hover,
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button:hover {
+    background: var(--bg3) !important;
+    color: var(--text) !important;
 }
-[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button:hover{
-    background:var(--bg3)!important;color:var(--text)!important;
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]:has(button) {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
 }
 
 /* Expand Sidebar Toggle Button (when sidebar is closed) */
@@ -364,26 +389,61 @@ hr{display:none!important;}
 [data-testid="stExpandSidebarButton"],
 [data-testid="stHeader"] [data-testid="stSidebarCollapseButton"],
 [data-sidebar-state="collapsed"] [data-testid="stSidebarCollapseButton"] {
-    display:flex!important;position:fixed!important;top:12px!important;left:12px!important;z-index:2000001!important;transform:none!important;
-    visibility:visible!important;opacity:1!important;
+    display: flex !important;
+    position: fixed !important;
+    top: 12px !important;
+    left: 12px !important;
+    z-index: 2000001 !important;
+    transform: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
+[data-testid="collapsedControl"],
+[data-testid="stExpandSidebarButton"],
+[data-testid="stHeader"] [data-testid="stSidebarCollapseButton"],
+[data-sidebar-state="collapsed"] [data-testid="stSidebarCollapseButton"],
 [data-testid="collapsedControl"] button,
 [data-testid="stExpandSidebarButton"] button,
 [data-testid="stHeader"] [data-testid="stSidebarCollapseButton"] button,
-[data-testid="collapsedControl"] [data-testid="stSidebarCollapseButton"] button,
 [data-sidebar-state="collapsed"] [data-testid="stSidebarCollapseButton"] button {
-    background:var(--bg)!important;border:1px solid var(--border)!important;color:var(--green)!important;
-    padding:6px!important;border-radius:10px!important;box-shadow:var(--shadow-md)!important;
-    min-height:0!important;width:36px!important;height:36px!important;
-    display:flex!important;align-items:center!important;justify-content:center!important;
-    visibility:visible!important;opacity:1!important;
+    background: var(--bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--green) !important;
+    padding: 6px !important;
+    border-radius: 10px !important;
+    box-shadow: var(--shadow-md) !important;
+    min-height: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
 }
+[data-testid="collapsedControl"]:hover,
+[data-testid="stExpandSidebarButton"]:hover,
+[data-testid="stHeader"] [data-testid="stSidebarCollapseButton"]:hover,
+[data-sidebar-state="collapsed"] [data-testid="stSidebarCollapseButton"]:hover,
 [data-testid="collapsedControl"] button:hover,
 [data-testid="stExpandSidebarButton"] button:hover,
 [data-testid="stHeader"] [data-testid="stSidebarCollapseButton"] button:hover,
-[data-testid="collapsedControl"] [data-testid="stSidebarCollapseButton"] button:hover,
 [data-sidebar-state="collapsed"] [data-testid="stSidebarCollapseButton"] button:hover {
-    background:var(--green-light)!important;border-color:var(--green)!important;
+    background: var(--green-light) !important;
+    border-color: var(--green) !important;
+    color: var(--green-hover) !important;
+}
+[data-testid="collapsedControl"]:has(button),
+[data-testid="stExpandSidebarButton"]:has(button),
+[data-testid="stHeader"] [data-testid="stSidebarCollapseButton"]:has(button),
+[data-sidebar-state="collapsed"] [data-testid="stSidebarCollapseButton"]:has(button) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
 /* Prevent top bar content from overlapping the expand button when sidebar is collapsed */
